@@ -4,5 +4,16 @@
       "path": "/api/cron/trigger",
       "schedule": "* * * * *"
     }
+  ],
+  "headers": [
+    {
+      "source": "/api/health",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        }
+      ]
+    }
   ]
 }

@@ -10,7 +10,7 @@ const LoginSchema = z.object({
 })
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.AUTH_SECRET as string,
   // CredentialsProvider REQUIERE strategy: 'jwt' — Auth.js no soporta
   // database sessions con credentials por seguridad.
   session: { strategy: 'jwt' },
