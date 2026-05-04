@@ -3,6 +3,8 @@ import { getOrCreateDefaultUserConfig } from "@/lib/db/queries/user-config";
 import { ThresholdForm } from "@/components/config/threshold-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+export const dynamic = "force-dynamic";
+
 export default async function ConfigPage() {
   const session = await requireAuth();
   const config = await getOrCreateDefaultUserConfig(session.user.id);
