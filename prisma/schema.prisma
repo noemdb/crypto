@@ -1,0 +1,144 @@
+generator client {
+  provider        = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+// ─── Auth.js v5 Prisma Adapter ─────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  config        UserConfig?
+  createdAt     DateTime  @default(now())
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// ─── Dominio de Arbitraje ───────────────────────────────────────────────────
+
+model MarketSnapshot {
+  id                 String   @id @default(cuid())
+  platform           String
+  asset              String
+  baseCurrency       String
+  price              Float
+  priceAsk           Float?
+  priceBid           Float?
+  volume24h          Float?
+  availableLiquidity Float    @default(0)
+  fee                Float
+  latencyMs          Int
+  scrapedAt          DateTime
+  metadata           Json?
+  createdAt          DateTime @default(now())
+
+  @@index([platform, asset, scrapedAt])
+  @@index([scrapedAt])
+}
+
+model Opportunity {
+  id                String   @id @default(cuid())
+  route             String
+  buyPlatform       String
+  sellPlatform      String
+  asset             String
+  buyPrice          Float
+  sellPrice         Float
+  capitalAmount     Float
+  roiGross          Float
+  feesImpact        Float
+  slippageImpact    Float
+  networkImpact     Float
+  roiAdjusted       Float
+  fillProbability   Float
+  liquidityRatio    Float
+  latencyRiskMs     Int
+  snapshotAgeBuyMs  Int
+  snapshotAgeSellMs Int
+  classification    String
+  rejectionReasons  String[] @default([])
+  evaluatedAt       DateTime
+  createdAt         DateTime @default(now())
+  alerts            Alert[]
+
+  @@index([classification, evaluatedAt])
+  @@index([route, evaluatedAt])
+}
+
+model Alert {
+  id            String      @id @default(cuid())
+  opportunityId String
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id])
+  channel       String
+  recipient     String
+  sentAt        DateTime    @default(now())
+  status        String
+
+  @@index([recipient, sentAt])
+}
+
+model PlatformStatus {
+  id                String    @id @default(cuid())
+  platform          String    @unique
+  isHealthy         Boolean   @default(true)
+  lastSuccessAt     DateTime?
+  lastErrorAt       DateTime?
+  errorMessage      String?
+  consecutiveErrors Int       @default(0)
+  updatedAt         DateTime  @updatedAt
+}
+
+model UserConfig {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  minROI               Float    @default(1.5)
+  capitalAmount        Float    @default(500)
+  maxSlippage          Float    @default(0.005)
+  minFillProbability   Float    @default(0.7)
+  alertEmail           String?
+  alertTelegram        String?
+  alertDedupeWindowMin Int      @default(30)
+  enabledPlatforms     String[]
+  monitoredAssets      String[]
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
