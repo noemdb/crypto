@@ -14,8 +14,6 @@ import { ClassificationDistChart } from "@/components/dashboard/classification-d
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { OpportunityOutput } from "@/lib/schemas";
 
-export const revalidate = 30; // revalidar cada 30s
-
 export default async function DashboardPage() {
   const session = await requireAuth();
   

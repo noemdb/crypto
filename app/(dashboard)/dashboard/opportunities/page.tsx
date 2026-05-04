@@ -4,8 +4,6 @@ import { OpportunityCard } from "@/components/dashboard/opportunity-card";
 import { ExportButton } from "@/components/dashboard/export-button";
 import type { OpportunityOutput } from "@/lib/schemas";
 
-export const revalidate = 60; // 1 min para historial
-
 export default async function OpportunitiesPage() {
   await requireAuth();
 
