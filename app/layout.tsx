@@ -10,6 +10,8 @@ export const metadata: Metadata = {
 
 import { ThemeProvider } from "@/components/theme-provider";
 
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({
   children,
 }: {
