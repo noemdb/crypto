@@ -14,7 +14,7 @@ type BinanceTicker = {
 };
 
 const ASSET_SYMBOL_MAP: Record<Asset, string> = {
-  USDT: "USDTUSDC", // USDT/USDC pair para precio en USD
+  USDT: "USDCUSDT", // Usamos el par inverso y calculamos 1/x
   USDC: "USDCUSDT",
   BTC: "BTCUSDT",
   ETH: "ETHUSDT",
@@ -39,8 +39,17 @@ export const binanceSpotScraper: Scraper = {
     }
 
     const ticker = tickerRes.data;
-    const bidPrice = parseFloat(ticker.bidPrice);
-    const askPrice = parseFloat(ticker.askPrice);
+    let bidPrice = parseFloat(ticker.bidPrice);
+    let askPrice = parseFloat(ticker.askPrice);
+
+    if (asset === "USDT") {
+      // Invertir el par USDCUSDT para obtener el valor de USDT en términos de USDC (USD)
+      const tempBid = 1 / askPrice;
+      const tempAsk = 1 / bidPrice;
+      bidPrice = tempBid;
+      askPrice = tempAsk;
+    }
+
     const midPrice = (bidPrice + askPrice) / 2;
 
     const snapshot: import("@/lib/schemas").RawSnapshotInput = {

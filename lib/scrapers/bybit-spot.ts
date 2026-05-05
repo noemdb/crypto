@@ -18,7 +18,7 @@ type BybitTickerResponse = {
 };
 
 const ASSET_SYMBOL_MAP: Record<Asset, string> = {
-  USDT: "USDTUSDC",
+  USDT: "USDCUSDT", // Invertido
   USDC: "USDCUSDT",
   BTC: "BTCUSDT",
   ETH: "ETHUSDT",
@@ -45,8 +45,17 @@ export const bybitSpotScraper: Scraper = {
     const ticker = res.data.result.list[0];
     if (!ticker) throw new Error("Bybit: empty ticker response");
 
-    const bidPrice = parseFloat(ticker.bid1Price);
-    const askPrice = parseFloat(ticker.ask1Price);
+    let bidPrice = parseFloat(ticker.bid1Price);
+    let askPrice = parseFloat(ticker.ask1Price);
+
+    if (asset === "USDT") {
+      // Invertir el par USDCUSDT para obtener el precio de USDT
+      const tempBid = 1 / askPrice;
+      const tempAsk = 1 / bidPrice;
+      bidPrice = tempBid;
+      askPrice = tempAsk;
+    }
+
     const midPrice = (bidPrice + askPrice) / 2;
     const volume24h = parseFloat(ticker.volume24h);
 

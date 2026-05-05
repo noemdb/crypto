@@ -60,6 +60,7 @@ export async function triggerFullScan() {
       scrapedCount,
       evaluatedPairs: 0,
       message: "Insufficient snapshots for evaluation",
+      durationMs: Date.now() - start,
     };
   }
 
