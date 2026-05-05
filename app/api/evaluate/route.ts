@@ -5,24 +5,14 @@ import { getOrCreateDefaultUserConfig } from "@/lib/db/queries/user-config";
 import { insertOpportunity } from "@/lib/db/queries/opportunities";
 import { dbSnapshotToSchema } from "@/lib/db/normalize";
 import { evaluateAllPairs } from "@/lib/arbitrage-engine/pipeline";
-import { processAlerts } from "@/lib/alerts/email";
+
 
 export async function POST(request: NextRequest) {
   const start = Date.now();
 
   // Protección de ruta: sin middleware.ts — verificación directa en el handler.
-  // Dos caminos válidos para llamar a este endpoint:
-  //   1. Sesión Auth.js (usuario desde dashboard)
-  //   2. CRON_SECRET Bearer (invocación automática post-scrape)
-  const cronSecret = process.env.CRON_SECRET;
-  const authHeader = request.headers.get("authorization");
-  const isCronCall = !!cronSecret && authHeader === `Bearer ${cronSecret}`;
-
-  if (!isCronCall) {
-    // Si no es llamada de cron, verificar sesión Auth.js
-    const unauthorized = await requireAuthApi();
-    if (unauthorized) return unauthorized;
-  }
+  const unauthorized = await requireAuthApi();
+  if (unauthorized) return unauthorized;
 
   // 1. Obtener snapshots frescos
   const dbSnapshots = await getAllFreshSnapshots();
@@ -93,15 +83,7 @@ export async function POST(request: NextRequest) {
     )
     .map((r) => r.value.id);
 
-  // 5. Disparar alertas para EXECUTABLE
-  const executableOpps = opportunities.filter(
-    (o) => o.classification === "EXECUTABLE",
-  );
   let alertsSent = 0;
-
-  if (executableOpps.length > 0) {
-    alertsSent = await processAlerts(executableOpps, userConfig);
-  }
 
   const counts = {
     executable: opportunities.filter((o) => o.classification === "EXECUTABLE")

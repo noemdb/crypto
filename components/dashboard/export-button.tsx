@@ -15,8 +15,17 @@ export function ExportButton({ classification }: { classification?: string }) {
     const result = await exportOpportunities(classification);
 
     if (result.success) {
-      // Disparar descarga abriendo la URL de UploadThing
-      window.open(result.downloadUrl, "_blank");
+      // Disparar descarga creando un Blob con el contenido CSV
+      const blob = new Blob([result.csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", result.filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
       setStatus("done");
       setTimeout(() => setStatus("idle"), 3000);
     } else {

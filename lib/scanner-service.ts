@@ -4,7 +4,7 @@ import { getOrCreateDefaultUserConfig } from "./db/queries/user-config";
 import { insertOpportunity } from "./db/queries/opportunities";
 import { dbSnapshotToSchema } from "./db/normalize";
 import { evaluateAllPairs } from "./arbitrage-engine/pipeline";
-import { processAlerts } from "./alerts/email";
+
 import { prisma } from "./db/prisma";
 import type { Platform, Asset } from "./schemas";
 
@@ -105,14 +105,7 @@ export async function triggerFullScan() {
 
   await Promise.allSettled(persistPromises);
 
-  // 4. Alerts
-  const executableOpps = opportunities.filter(
-    (o) => o.classification === "EXECUTABLE",
-  );
   let alertsSent = 0;
-  if (executableOpps.length > 0) {
-    alertsSent = await processAlerts(executableOpps, userConfig);
-  }
 
   const durationMs = Date.now() - start;
   console.info(

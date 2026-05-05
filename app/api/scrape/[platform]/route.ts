@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyQStashSignature } from "@/lib/qstash";
+
 import { runScrape } from "@/lib/scrapers/run-scrape";
 import { ScrapeRequestSchema } from "@/lib/schemas";
 
@@ -7,12 +7,6 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ platform: string }> },
 ) {
-  // Verificar firma QStash
-  const clonedReq = request.clone();
-  const isValid = await verifyQStashSignature(clonedReq);
-  if (!isValid) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
   const { platform } = await params;
 

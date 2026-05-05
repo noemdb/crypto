@@ -2,10 +2,8 @@
 
 import { getAuthenticatedUserId } from "@/lib/auth-helpers";
 import { getOpportunities } from "@/lib/db/queries/opportunities";
-import { UTApi } from "uploadthing/server";
-
 type ExportResult =
-  | { success: true; downloadUrl: string; filename: string; count: number }
+  | { success: true; csvContent: string; filename: string; count: number }
   | { success: false; error: string };
 
 function opportunitiesToCSV(
@@ -76,27 +74,10 @@ export async function exportOpportunities(
 
   const csv = opportunitiesToCSV(rows);
   const filename = `aim-export-${new Date().toISOString().slice(0, 10)}.csv`;
-  
-  // En Server Actions, usamos UTApi para subir el contenido directamente
-  const utapi = new UTApi();
-  
-  try {
-    // Create a file object from string
-    const file = new File([csv], filename, { type: "text/csv" });
-    const response = await utapi.uploadFiles(file);
-
-    if (response.error) {
-      return { success: false, error: response.error.message };
-    }
-
-    return {
-      success: true,
-      downloadUrl: response.data.url,
-      filename,
-      count: rows.length,
-    };
-  } catch (error) {
-    console.error("[export] upload failed:", error);
-    return { success: false, error: "Error al subir el archivo" };
-  }
+  return {
+    success: true,
+    csvContent: csv,
+    filename,
+    count: rows.length,
+  };
 }
