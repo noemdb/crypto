@@ -1,8 +1,5 @@
 "use client";
 
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
-
 export default function GlobalError({
   error,
   reset,
@@ -11,11 +8,8 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <html
-      lang="es"
-      className={`${GeistSans.variable} ${GeistMono.variable}`}
-    >
-      <body className="bg-background text-foreground antialiased p-8">
+    <html lang="es">
+      <body className="bg-background text-foreground antialiased p-8 font-sans">
         <div className="space-y-4">
           <h2 className="text-2xl font-bold">Error Crítico del Sistema</h2>
           <p className="text-muted-foreground">{error.message || "Ha ocurrido un error inesperado."}</p>
