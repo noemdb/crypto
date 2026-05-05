@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import { render } from "@react-email/render";
-import { OpportunityAlertEmail } from "@/emails/opportunity-alert";
+import { OpportunityAlertEmail } from "@/lib/emails/opportunity-alert";
 import { isAlertDuplicate, recordAlert } from "./dedup";
 import { prisma } from "@/lib/db/prisma";
 import type { OpportunityOutput, UserConfig } from "@/lib/schemas";

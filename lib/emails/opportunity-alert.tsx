@@ -1,5 +1,6 @@
-import {
-  Html as EmailHtml,
+import * as ReactEmail from "@react-email/components";
+const EmailHtml = ReactEmail.Html;
+const {
   Head,
   Preview,
   Body,
@@ -11,7 +12,7 @@ import {
   Text,
   Hr,
   Button,
-} from "@react-email/components";
+} = ReactEmail;
 import type { OpportunityOutput } from "@/lib/schemas";
 
 type Props = {
