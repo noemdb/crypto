@@ -1,5 +1,5 @@
 import {
-  Html,
+  Html as EmailHtml,
   Head,
   Preview,
   Body,
@@ -24,7 +24,7 @@ export function OpportunityAlertEmail({ opportunity, appUrl }: Props) {
     opportunity.classification === "EXECUTABLE" ? "#16a34a" : "#d97706";
 
   return (
-    <Html>
+    <EmailHtml>
       <Head />
       <Preview>
         ⚡ {opportunity.route} → ROI {opportunity.roiAdjusted.toFixed(2)}%
@@ -155,6 +155,6 @@ export function OpportunityAlertEmail({ opportunity, appUrl }: Props) {
           </Text>
         </Container>
       </Body>
-    </Html>
+    </EmailHtml>
   );
 }

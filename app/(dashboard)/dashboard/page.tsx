@@ -11,7 +11,9 @@ import { ClassificationFilter } from "@/components/dashboard/classification-filt
 import { PlatformStatusBar } from "@/components/dashboard/platform-status";
 import { ROIChart } from "@/components/dashboard/roi-chart";
 import { ClassificationDistChart } from "@/components/dashboard/classification-dist-chart";
+import { ScannerButton } from "@/components/dashboard/scanner-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { prisma } from "@/lib/db/prisma";
 import type { OpportunityOutput } from "@/lib/schemas";
 
 export default async function DashboardPage() {
@@ -19,6 +21,9 @@ export default async function DashboardPage() {
   
   // Obtener config para aplicar filtros reactivos
   const userConfig = await getOrCreateDefaultUserConfig(session.user.id);
+
+  // Obtener la hora actual de la DB para sincronizar con createdAt
+  const [{ dbNow }] = await prisma.$queryRaw<[{ dbNow: Date }]>`SELECT NOW() as "dbNow"`;
 
   const [rawOpps, platformStatuses, roiStats, distData] = await Promise.all([
     getOpportunities({ limit: 20 }),
@@ -47,7 +52,8 @@ export default async function DashboardPage() {
     latencyRiskMs: o.latencyRiskMs,
     classification: o.classification as OpportunityOutput["classification"],
     rejectionReasons: o.rejectionReasons,
-    evaluatedAt: o.evaluatedAt.toISOString(),
+    evaluatedAt: o.evaluatedAt.getTime(),
+    createdAt: o.createdAt.getTime(),
     snapshotAge: { buyMs: o.snapshotAgeBuyMs, sellMs: o.snapshotAgeSellMs },
   })) satisfies OpportunityOutput[];
 
@@ -60,10 +66,13 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Monitor</h1>
-        <span className="text-xs text-muted-foreground">
-          {opportunities.length} oportunidades recientes
-        </span>
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold">Monitor</h1>
+          <p className="text-xs text-muted-foreground">
+            {opportunities.length} oportunidades recientes
+          </p>
+        </div>
+        <ScannerButton />
       </div>
 
       <PlatformStatusBar statuses={platformStatuses} />
@@ -101,7 +110,7 @@ export default async function DashboardPage() {
       */}
       <OpportunityList 
         initialOpportunities={opportunities} 
-        serverTime={Date.now()}
+        serverTime={dbNow.getTime()}
         config={{
           minROI: userConfig.minROI,
           minFillProbability: userConfig.minFillProbability

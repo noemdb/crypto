@@ -9,7 +9,9 @@ export function OpportunityCard({
   opportunity: OpportunityOutput;
   serverTime: number;
 }) {
-  const age = serverTime - new Date(opportunity.evaluatedAt).getTime();
+  const displayTime = opportunity.createdAt || opportunity.evaluatedAt;
+  const timestamp = typeof displayTime === "number" ? displayTime : new Date(displayTime).getTime();
+  const age = serverTime - timestamp;
   const ageLabel =
     age < 60_000
       ? `hace ${Math.max(0, Math.round(age / 1000))}s`

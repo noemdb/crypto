@@ -32,7 +32,8 @@ export const OpportunityOutputSchema = z.object({
   latencyRiskMs: z.number().nonnegative(),
   classification: ClassificationEnum,
   rejectionReasons: z.array(z.string()).optional(),
-  evaluatedAt: z.string().datetime(),
+  evaluatedAt: z.union([z.string().datetime(), z.number()]),
+  createdAt: z.union([z.string().datetime(), z.number()]).optional(),
   snapshotAge: z.object({
     buyMs: z.number(),
     sellMs: z.number(),
