@@ -1,14 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ClassificationBadge } from "./classification-badge";
 import { useDashboardStore } from "@/lib/store/dashboard.store";
 import type { OpportunityOutput } from "@/lib/schemas";
 
-function useAgeLabel(timestamp: number | string): string {
-  const ts = typeof timestamp === "number" ? timestamp : new Date(timestamp).getTime();
+function computeAgeLabel(ts: number): string {
   const age = Date.now() - ts;
-
   if (age < 0) return "ahora";
   if (age < 60_000) return `hace ${Math.max(0, Math.round(age / 1000))}s`;
   if (age < 3_600_000) return `hace ${Math.round(age / 60_000)}min`;
@@ -23,21 +22,35 @@ export function OpportunityCard({
   const { displayTimezone } = useDashboardStore();
 
   const displayTime = opportunity.createdAt ?? opportunity.evaluatedAt;
-  const ageLabel = useAgeLabel(displayTime);
+  const ts =
+    typeof displayTime === "number"
+      ? displayTime
+      : new Date(displayTime).getTime();
 
-  // Timestamp formateado en la zona seleccionada
-  const ts = typeof displayTime === "number" ? displayTime : new Date(displayTime).getTime();
-  const resolvedTz =
-    displayTimezone === "local"
-      ? Intl.DateTimeFormat().resolvedOptions().timeZone
-      : displayTimezone;
+  // Defer locale-sensitive rendering to client-only to avoid SSR hydration mismatch.
+  const [ageLabel, setAgeLabel] = useState<string>("...");
+  const [formattedTime, setFormattedTime] = useState<string>("");
 
-  const formattedTime = new Intl.DateTimeFormat("es", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: resolvedTz,
-    timeZoneName: "short",
-  }).format(new Date(ts));
+  useEffect(() => {
+    const resolvedTz =
+      displayTimezone === "local"
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone
+        : displayTimezone;
+
+    setAgeLabel(computeAgeLabel(ts));
+    setFormattedTime(
+      new Intl.DateTimeFormat("es", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: resolvedTz,
+        timeZoneName: "short",
+      }).format(new Date(ts))
+    );
+
+    // Refresh the age label every minute
+    const interval = setInterval(() => setAgeLabel(computeAgeLabel(ts)), 60_000);
+    return () => clearInterval(interval);
+  }, [ts, displayTimezone]);
 
   return (
     <Card className="hover:shadow-md transition-shadow">

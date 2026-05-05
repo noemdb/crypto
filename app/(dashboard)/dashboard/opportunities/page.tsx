@@ -49,7 +49,6 @@ export default async function OpportunitiesPage() {
           <OpportunityCard 
             key={opp.id} 
             opportunity={opp} 
-            serverTime={Date.now()}
           />
         ))}
 
