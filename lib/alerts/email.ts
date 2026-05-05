@@ -1,16 +1,6 @@
-import { Resend } from "resend";
-import { render } from "@react-email/render";
-import { OpportunityAlertEmail } from "@/lib/emails/opportunity-alert";
 import { isAlertDuplicate, recordAlert } from "./dedup";
 import { prisma } from "@/lib/db/prisma";
 import type { OpportunityOutput, UserConfig } from "@/lib/schemas";
-
-let resend: Resend | null = null;
-
-function getResend(): Resend {
-  if (!resend) resend = new Resend(process.env.RESEND_API_KEY!);
-  return resend;
-}
 
 export async function processAlerts(
   opportunities: OpportunityOutput[],
@@ -19,6 +9,12 @@ export async function processAlerts(
   const recipient = config.alertEmail;
   if (!recipient) return 0;
 
+  // Dynamic imports to avoid Next.js build-time static analysis of react-email components
+  const { Resend } = await import("resend");
+  const { render } = await import("@react-email/render");
+  const { OpportunityAlertEmail } = await import("@/lib/emails/opportunity-alert");
+
+  const resend = new Resend(process.env.RESEND_API_KEY!);
   let sent = 0;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
@@ -53,7 +49,7 @@ export async function processAlerts(
         OpportunityAlertEmail({ opportunity: opp, appUrl }),
       );
 
-      const result = await getResend().emails.send({
+      const result = await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL ?? "alerts@example.com",
         to: recipient,
         subject: `⚡ AIM: ${opp.route} → ROI ${opp.roiAdjusted.toFixed(2)}%`,
