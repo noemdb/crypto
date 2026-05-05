@@ -1,6 +1,5 @@
-import * as ReactEmail from "@react-email/components";
-const EmailHtml = ReactEmail.Html;
-const {
+import { Html as EHtml } from "@react-email/html";
+import {
   Head,
   Preview,
   Body,
@@ -12,7 +11,7 @@ const {
   Text,
   Hr,
   Button,
-} = ReactEmail;
+} from "@react-email/components";
 import type { OpportunityOutput } from "@/lib/schemas";
 
 type Props = {
@@ -25,7 +24,7 @@ export function OpportunityAlertEmail({ opportunity, appUrl }: Props) {
     opportunity.classification === "EXECUTABLE" ? "#16a34a" : "#d97706";
 
   return (
-    <EmailHtml>
+    <EHtml>
       <Head />
       <Preview>
         ⚡ {opportunity.route} → ROI {opportunity.roiAdjusted.toFixed(2)}%
@@ -156,6 +155,6 @@ export function OpportunityAlertEmail({ opportunity, appUrl }: Props) {
           </Text>
         </Container>
       </Body>
-    </EmailHtml>
+    </EHtml>
   );
 }
