@@ -7,7 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, CircleOff, Play, Pause, RefreshCw, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 
-const WORKER_BASE = process.env.NEXT_PUBLIC_SCAN_WORKER_URL ?? "http://127.0.0.1:3333";
+const explicitWorkerBase = process.env.NEXT_PUBLIC_SCAN_WORKER_URL;
+const defaultWorkerBases = [
+  explicitWorkerBase,
+  "/api/scan-worker",
+  typeof window !== "undefined" ? `${window.location.protocol}//${window.location.hostname}:3333` : null,
+  "http://127.0.0.1:3333",
+  "http://localhost:3333",
+].filter((url): url is string => Boolean(url));
+
+const WORKER_BASE = defaultWorkerBases[0];
 
 type WorkerStatus = {
   mode: "idle" | "manual" | "online";
@@ -31,29 +40,34 @@ function formatTimestamp(timestamp: string | null) {
 export function ScannerButton() {
   const [status, setStatus] = React.useState<WorkerStatus | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
-
-  const workerUrl = `${WORKER_BASE}`;
+  const [workerUrl, setWorkerUrl] = React.useState(`${WORKER_BASE}`);
 
   const isWorkerOnline = status !== null;
   const isOnlineMode = status?.mode === "online";
   const isManualBusy = isLoading && !isOnlineMode;
 
   const fetchStatus = React.useCallback(async () => {
-    try {
-      const response = await fetch(`${workerUrl}/scan/status`, {
-        cache: "no-store",
-      });
+    for (const base of defaultWorkerBases) {
+      try {
+        const response = await fetch(`${base}/scan/status`, {
+          cache: "no-store",
+        });
 
-      if (!response.ok) {
-        throw new Error("Worker unavailable");
+        if (!response.ok) {
+          throw new Error("Worker unavailable");
+        }
+
+        const json = (await response.json()) as WorkerStatus;
+        setStatus(json);
+        setWorkerUrl(base);
+        return;
+      } catch {
+        // Try the next candidate.
       }
-
-      const json = (await response.json()) as WorkerStatus;
-      setStatus(json);
-    } catch (error) {
-      setStatus(null);
     }
-  }, [workerUrl]);
+
+    setStatus(null);
+  }, []);
 
   React.useEffect(() => {
     fetchStatus();
@@ -62,18 +76,27 @@ export function ScannerButton() {
   }, [fetchStatus]);
 
   const requestWorker = async (path: string, method: "POST" | "GET") => {
-    const response = await fetch(`${workerUrl}${path}`, {
-      method,
-      headers: { "Content-Type": "application/json" },
-    });
+    for (const base of defaultWorkerBases) {
+      try {
+        const response = await fetch(`${base}${path}`, {
+          method,
+          headers: { "Content-Type": "application/json" },
+        });
 
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      const message = body?.error ?? response.statusText;
-      throw new Error(message);
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          const message = body?.error ?? response.statusText;
+          throw new Error(message);
+        }
+
+        setWorkerUrl(base);
+        return response.json();
+      } catch {
+        // Try the next candidate.
+      }
     }
 
-    return response.json();
+    throw new Error("Worker unavailable");
   };
 
   const handleManualScan = async () => {

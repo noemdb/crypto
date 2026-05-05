@@ -11,6 +11,7 @@ export default async function LoginPage({
   if (session) redirect('/dashboard')
 
   const { error, callbackUrl } = await searchParams
+  const defaultCallbackUrl = callbackUrl ?? (process.env.NEXT_PUBLIC_APP_URL ? new URL('/dashboard', process.env.NEXT_PUBLIC_APP_URL).toString() : '/dashboard')
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-muted/40">
