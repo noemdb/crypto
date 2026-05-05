@@ -1,21 +1,43 @@
+"use client";
+
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ClassificationBadge } from "./classification-badge";
+import { useDashboardStore } from "@/lib/store/dashboard.store";
 import type { OpportunityOutput } from "@/lib/schemas";
+
+function useAgeLabel(timestamp: number | string): string {
+  const ts = typeof timestamp === "number" ? timestamp : new Date(timestamp).getTime();
+  const age = Date.now() - ts;
+
+  if (age < 0) return "ahora";
+  if (age < 60_000) return `hace ${Math.max(0, Math.round(age / 1000))}s`;
+  if (age < 3_600_000) return `hace ${Math.round(age / 60_000)}min`;
+  return `hace ${Math.round(age / 3_600_000)}h`;
+}
 
 export function OpportunityCard({
   opportunity,
-  serverTime,
 }: {
   opportunity: OpportunityOutput;
-  serverTime: number;
 }) {
-  const displayTime = opportunity.createdAt || opportunity.evaluatedAt;
-  const timestamp = typeof displayTime === "number" ? displayTime : new Date(displayTime).getTime();
-  const age = serverTime - timestamp;
-  const ageLabel =
-    age < 60_000
-      ? `hace ${Math.max(0, Math.round(age / 1000))}s`
-      : `hace ${Math.round(age / 60_000)}min`;
+  const { displayTimezone } = useDashboardStore();
+
+  const displayTime = opportunity.createdAt ?? opportunity.evaluatedAt;
+  const ageLabel = useAgeLabel(displayTime);
+
+  // Timestamp formateado en la zona seleccionada
+  const ts = typeof displayTime === "number" ? displayTime : new Date(displayTime).getTime();
+  const resolvedTz =
+    displayTimezone === "local"
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : displayTimezone;
+
+  const formattedTime = new Intl.DateTimeFormat("es", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: resolvedTz,
+    timeZoneName: "short",
+  }).format(new Date(ts));
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -24,7 +46,12 @@ export function OpportunityCard({
           <p className="font-mono text-sm font-semibold">
             {opportunity.asset}: {opportunity.route}
           </p>
-          <p className="text-xs text-muted-foreground mt-0.5">{ageLabel}</p>
+          <p
+            className="text-xs text-muted-foreground mt-0.5"
+            title={formattedTime}
+          >
+            {ageLabel}
+          </p>
         </div>
         <ClassificationBadge
           classification={

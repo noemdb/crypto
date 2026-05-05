@@ -1,4 +1,12 @@
 {
+  "build": {
+    "env": {
+      "TZ": "UTC"
+    }
+  },
+  "env": {
+    "TZ": "UTC"
+  },
   "crons": [
     {
       "path": "/api/cron/trigger",

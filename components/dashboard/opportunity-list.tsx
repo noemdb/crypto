@@ -11,11 +11,9 @@ type ConfigProps = {
 
 export function OpportunityList({
   initialOpportunities,
-  serverTime,
   config,
 }: {
   initialOpportunities: OpportunityOutput[];
-  serverTime: number;
   config: ConfigProps;
 }) {
   const { activeClassification } = useDashboardStore();
@@ -46,10 +44,9 @@ export function OpportunityList({
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {filtered.map((opp) => (
-        <OpportunityCard 
-          key={opp.id} 
-          opportunity={opp} 
-          serverTime={serverTime} 
+        <OpportunityCard
+          key={opp.id}
+          opportunity={opp}
         />
       ))}
 

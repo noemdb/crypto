@@ -22,6 +22,10 @@ type DashboardStore = {
   notifications: Notification[];
   addNotification: (n: Omit<Notification, "id">) => void;
   dismissNotification: (id: string) => void;
+
+  /** Zona horaria para mostrar timestamps. "local" = detectar del navegador. */
+  displayTimezone: string;
+  setDisplayTimezone: (tz: string) => void;
 };
 
 export const useDashboardStore = create<DashboardStore>()(
@@ -51,10 +55,16 @@ export const useDashboardStore = create<DashboardStore>()(
         set((s) => ({
           notifications: s.notifications.filter((n) => n.id !== id),
         })),
+
+      displayTimezone: "local",
+      setDisplayTimezone: (tz) => set({ displayTimezone: tz }),
     }),
     {
       name: "aim-dashboard",
-      partialize: (s) => ({ activeClassification: s.activeClassification }),
+      partialize: (s) => ({
+        activeClassification: s.activeClassification,
+        displayTimezone: s.displayTimezone,
+      }),
     },
   ),
 );

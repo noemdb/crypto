@@ -13,7 +13,6 @@ import { ROIChart } from "@/components/dashboard/roi-chart";
 import { ClassificationDistChart } from "@/components/dashboard/classification-dist-chart";
 import { ScannerButton } from "@/components/dashboard/scanner-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { prisma } from "@/lib/db/prisma";
 import type { OpportunityOutput } from "@/lib/schemas";
 
 export default async function DashboardPage() {
@@ -21,9 +20,6 @@ export default async function DashboardPage() {
   
   // Obtener config para aplicar filtros reactivos
   const userConfig = await getOrCreateDefaultUserConfig(session.user.id);
-
-  // Obtener la hora actual de la DB para sincronizar con createdAt
-  const [{ dbNow }] = await prisma.$queryRaw<[{ dbNow: Date }]>`SELECT NOW() as "dbNow"`;
 
   const [rawOpps, platformStatuses, roiStats, distData] = await Promise.all([
     getOpportunities({ limit: 20 }),
@@ -108,9 +104,8 @@ export default async function DashboardPage() {
         Pasamos la config para que el listado pueda re-clasificar 
         si el usuario cambió los umbrales en la DB.
       */}
-      <OpportunityList 
-        initialOpportunities={opportunities} 
-        serverTime={dbNow.getTime()}
+      <OpportunityList
+        initialOpportunities={opportunities}
         config={{
           minROI: userConfig.minROI,
           minFillProbability: userConfig.minFillProbability
