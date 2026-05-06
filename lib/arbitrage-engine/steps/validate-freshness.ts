@@ -11,7 +11,7 @@ export const TTL_MS: Record<Platform, number> = {
 };
 
 export function validateSnapshotFreshness(ctx: EvalContext): EvalContext {
-  const now = Date.now();
+  const now = ctx.referenceTime;
   const buyAge = now - new Date(ctx.input.buySnapshot.scrapedAt).getTime();
   const sellAge = now - new Date(ctx.input.sellSnapshot.scrapedAt).getTime();
   const buyTTL = TTL_MS[ctx.input.buySnapshot.platform];

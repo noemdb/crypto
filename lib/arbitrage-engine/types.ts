@@ -6,12 +6,19 @@ export type EvalContext = {
   output: Partial<OpportunityOutput>;
   rejected: boolean;
   rejectionReasons: string[];
+  referenceTime: number;
 };
 
 export type PipelineStep = (ctx: EvalContext) => EvalContext;
 
 export function createContext(input: OpportunityInput): EvalContext {
-  return { input, output: {}, rejected: false, rejectionReasons: [] };
+  return {
+    input,
+    output: {},
+    rejected: false,
+    rejectionReasons: [],
+    referenceTime: input.referenceTime ?? Date.now(),
+  };
 }
 
 export function reject(ctx: EvalContext, reason: string): EvalContext {

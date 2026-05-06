@@ -66,9 +66,9 @@ model MarketSnapshot {
   availableLiquidity Float    @default(0)
   fee                Float
   latencyMs          Int
-  scrapedAt          DateTime
+  scrapedAt          DateTime @db.Timestamptz(3)
   metadata           Json?
-  createdAt          DateTime @default(now())
+  createdAt          DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([platform, asset, scrapedAt])
   @@index([scrapedAt])
@@ -95,8 +95,8 @@ model Opportunity {
   snapshotAgeSellMs Int
   classification    String
   rejectionReasons  String[] @default([])
-  evaluatedAt       DateTime
-  createdAt         DateTime @default(now())
+  evaluatedAt       DateTime @db.Timestamptz(3)
+  createdAt         DateTime @default(now()) @db.Timestamptz(3)
   alerts            Alert[]
 
   @@index([classification, evaluatedAt])
@@ -106,7 +106,7 @@ model Opportunity {
 model Alert {
   id            String      @id @default(cuid())
   opportunityId String
-  opportunity   Opportunity @relation(fields: [opportunityId], references: [id])
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   channel       String
   recipient     String
   sentAt        DateTime    @default(now())
@@ -119,11 +119,11 @@ model PlatformStatus {
   id                String    @id @default(cuid())
   platform          String    @unique
   isHealthy         Boolean   @default(true)
-  lastSuccessAt     DateTime?
-  lastErrorAt       DateTime?
+  lastSuccessAt     DateTime? @db.Timestamptz(3)
+  lastErrorAt       DateTime? @db.Timestamptz(3)
   errorMessage      String?
   consecutiveErrors Int       @default(0)
-  updatedAt         DateTime  @updatedAt
+  updatedAt         DateTime  @updatedAt @db.Timestamptz(3)
 }
 
 model UserConfig {

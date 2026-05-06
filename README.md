@@ -29,6 +29,24 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Local Device Worker
+
+This repository now supports a local device worker that performs exchange scraping from your machine instead of from Vercel.
+
+Start the worker locally with:
+
+```bash
+npm run worker
+```
+
+Then open the dashboard in your browser and use the `Ejecutar Escáner` and `Datos online` controls. The dashboard will call the worker at `http://127.0.0.1:3333`.
+
+If you need a custom address, set:
+
+```bash
+export NEXT_PUBLIC_SCAN_WORKER_URL="http://127.0.0.1:3333"
+```
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

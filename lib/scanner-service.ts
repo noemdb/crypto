@@ -63,6 +63,10 @@ export async function triggerFullScan() {
       durationMs: Date.now() - start,
     };
   }
+  
+  // Obtener tiempo actual de la base de datos para sincronizar cálculos de "edad"
+  const [{ dbNow }] = await prisma.$queryRaw<[{ dbNow: Date }]>`SELECT NOW() as "dbNow"`;
+  const referenceTime = dbNow.getTime();
 
   const firstUser = await prisma.user.findFirst();
   if (!firstUser) {
@@ -75,6 +79,8 @@ export async function triggerFullScan() {
     snapshots,
     userConfig,
     userConfig.capitalAmount,
+    0, // networkCostUSD
+    referenceTime,
   );
 
   // 3. Persist
