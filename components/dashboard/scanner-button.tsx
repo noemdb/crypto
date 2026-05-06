@@ -8,7 +8,7 @@ import { CheckCircle2, CircleOff, Play, Pause, RefreshCw, WifiOff } from "lucide
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-const explicitWorkerBase = process.env.NEXT_PUBLIC_SCAN_WORKER_URL;
+const explicitWorkerBase = process.env.NEXT_PUBLIC_SCAN_WORKER_URL?.replace(/\/$/, "");
 const defaultWorkerBases = [
   explicitWorkerBase,
   "/api/scan-worker",
@@ -17,7 +17,7 @@ const defaultWorkerBases = [
   "http://localhost:3333",
 ].filter((url): url is string => Boolean(url));
 
-const WORKER_BASE = defaultWorkerBases[0];
+const WORKER_BASE = defaultWorkerBases[0] ?? "";
 
 type WorkerStatus = {
   mode: "idle" | "manual" | "online";
