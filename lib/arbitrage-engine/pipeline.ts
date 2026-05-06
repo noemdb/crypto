@@ -44,6 +44,7 @@ export function evaluateAllPairs(
   userConfig: import("@/lib/schemas").UserConfig,
   capitalAmount: number,
   networkCostUSD = 0,
+  referenceTime?: number,
 ): OpportunityOutput[] {
   const results: OpportunityOutput[] = [];
 
@@ -63,6 +64,7 @@ export function evaluateAllPairs(
           capitalAmount,
           networkCostUSD,
           userConfig,
+          referenceTime,
         });
         results.push(output);
       } catch (err) {

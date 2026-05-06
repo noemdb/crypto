@@ -2,6 +2,7 @@ import { config } from "dotenv";
 import { resolve } from "node:path";
 
 config({ path: resolve(process.cwd(), ".env.local") });
+config({ path: resolve(process.cwd(), ".env") });
 
 import http from "node:http";
 import { URL } from "node:url";
@@ -10,7 +11,7 @@ import { URL } from "node:url";
 
   const { triggerFullScan } = await import("../lib/scanner-service");
 
-  const PORT = Number(process.env.SCAN_WORKER_PORT ?? 3333);
+  const PORT = Number(process.env.PORT ?? process.env.SCAN_WORKER_PORT ?? 3333);
   const INTERVAL_SECONDS = Number(process.env.SCAN_WORKER_INTERVAL ?? 180);
   const IP_CHECK_URL = process.env.SCAN_WORKER_IP_URL ?? "https://api.ipify.org?format=json";
 
@@ -223,10 +224,10 @@ import { URL } from "node:url";
     });
   });
 
-  server.listen(PORT, () => {
-    console.log(`[worker] Device scan worker listening on http://127.0.0.1:${PORT}`);
+  server.listen(PORT, "0.0.0.0", () => {
+    console.log(`[worker] Scan worker listening on http://0.0.0.0:${PORT}`);
     console.log(`[worker] Online interval: ${INTERVAL_SECONDS}s`);
-    });
+  });
 
   process.on("SIGINT", () => {
     console.log("[worker] Shutting down...");

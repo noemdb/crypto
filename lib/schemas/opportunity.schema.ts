@@ -11,6 +11,7 @@ export const OpportunityInputSchema = z.object({
   capitalAmount: z.number().positive(),
   networkCostUSD: z.number().nonnegative().default(0),
   userConfig: UserConfigSchema,
+  referenceTime: z.number().optional(),
 });
 
 export const OpportunityOutputSchema = z.object({

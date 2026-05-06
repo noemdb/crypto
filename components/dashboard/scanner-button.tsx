@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, CircleOff, Play, Pause, RefreshCw, WifiOff } from "lucide-react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const explicitWorkerBase = process.env.NEXT_PUBLIC_SCAN_WORKER_URL;
 const defaultWorkerBases = [
@@ -38,6 +39,7 @@ function formatTimestamp(timestamp: string | null) {
 }
 
 export function ScannerButton() {
+  const router = useRouter();
   const [status, setStatus] = React.useState<WorkerStatus | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [workerUrl, setWorkerUrl] = React.useState(`${WORKER_BASE}`);
@@ -69,11 +71,24 @@ export function ScannerButton() {
     setStatus(null);
   }, []);
 
+  const lastRunAtRef = React.useRef<string | null>(null);
+
   React.useEffect(() => {
     fetchStatus();
     const interval = setInterval(fetchStatus, 5000);
     return () => clearInterval(interval);
   }, [fetchStatus]);
+
+  // Sincronizar dashboard cuando el worker reporta una nueva ejecución
+  React.useEffect(() => {
+    if (status?.lastRunAt && status.lastRunAt !== lastRunAtRef.current) {
+      if (lastRunAtRef.current !== null) {
+        // Solo refrescar si no es la carga inicial
+        router.refresh();
+      }
+      lastRunAtRef.current = status.lastRunAt;
+    }
+  }, [status?.lastRunAt, router]);
 
   const requestWorker = async (path: string, method: "POST" | "GET") => {
     for (const base of defaultWorkerBases) {
@@ -107,6 +122,7 @@ export function ScannerButton() {
     try {
       await requestWorker("/scan/manual", "POST");
       toast.success("Escaneo completado desde el dispositivo.", { id: toastId });
+      router.refresh();
       fetchStatus();
     } catch (error) {
       toast.error(`Error: ${(error as Error).message}`, { id: toastId });

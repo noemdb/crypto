@@ -19,7 +19,8 @@
     "db:studio": "prisma studio",
     "typecheck": "tsc --noEmit",
     "hash-password": "tsx scripts/hash-password.ts",
-    "worker": "tsx worker/scan-worker.ts"
+    "worker": "tsx worker/scan-worker.ts",
+    "worker:prod": "tsx worker/scan-worker.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

@@ -1,6 +1,7 @@
 import { requireAuth } from "@/lib/auth-helpers";
 import { getOrCreateDefaultUserConfig } from "@/lib/db/queries/user-config";
 import { ThresholdForm } from "@/components/config/threshold-form";
+import { DangerZone } from "@/components/config/danger-zone";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
@@ -39,6 +40,8 @@ export default async function ConfigPage() {
           <ThresholdForm initialConfig={initialValues} />
         </CardContent>
       </Card>
+
+      <DangerZone />
     </div>
   );
 }
