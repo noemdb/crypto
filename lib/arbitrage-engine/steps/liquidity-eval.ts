@@ -8,12 +8,20 @@ export function evaluateLiquidity(ctx: EvalContext): EvalContext {
     sellSnapshot.availableLiquidity,
   );
 
+  let updatedCtx = {
+    ...ctx,
+    output: {
+      ...ctx.output,
+      liquidityRatio: minLiquidity / capitalAmount,
+    },
+  };
+
   if (minLiquidity < capitalAmount) {
-    return reject(
-      ctx,
+    updatedCtx = reject(
+      updatedCtx,
       `INSUFFICIENT_LIQUIDITY: available=${minLiquidity} required=${capitalAmount}`,
     );
   }
 
-  return ctx;
+  return updatedCtx;
 }

@@ -2,8 +2,9 @@ import { createContext, pipe, type EvalContext } from "./types";
 import type { OpportunityInput, OpportunityOutput } from "@/lib/schemas";
 import { OpportunityOutputSchema } from "@/lib/schemas";
 import { validateSnapshotFreshness } from "./steps/validate-freshness";
+import { detectPriceAnomalies } from "./steps/price-anomaly";
 import { normalizeCurrency } from "./steps/currency-normalization";
-import { detectOutliers } from "./steps/outlier-detection";
+import { validateRealism } from "./steps/validate-realism";
 import { calculateGrossROI } from "./steps/calculate-roi";
 import { applyFeeImpact } from "./steps/apply-fees";
 import { applySlippageModel } from "./steps/slippage-model";
@@ -15,8 +16,9 @@ import { classify } from "./steps/classify";
 
 const evaluationPipeline = pipe(
   validateSnapshotFreshness,
+  detectPriceAnomalies,
   normalizeCurrency,
-  detectOutliers,
+  validateRealism,
   calculateGrossROI,
   applyFeeImpact,
   applySlippageModel,
