@@ -3,9 +3,11 @@
 
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { GenerateButton } from './generate-button'
 import { KPICards } from './kpi-cards'
-import { Sparkles, AlertCircle, FileText, Loader2 } from 'lucide-react'
+import { Sparkles, AlertCircle, FileText, Loader2, Copy, Check } from 'lucide-react'
+import { toast } from 'sonner'
 import type { AnalysisKPIs } from '@/lib/actions/analysis.actions'
 import {
   Dialog,
@@ -40,6 +42,7 @@ export function AnalysisPanel({ initialKPIs }: Props) {
   const [analysisContent, setAnalysisContent] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isCopied, setIsCopied] = useState(false)
 
   function handleResult(content: string) {
     setAnalysisContent(content)
@@ -55,6 +58,18 @@ export function AnalysisPanel({ initialKPIs }: Props) {
     setKPIs(newKpis)
     setAnalysisContent(null) // Reset analysis when count changes
     setError(null)
+  }
+
+  async function handleCopy() {
+    if (!analysisContent) return
+    try {
+      await navigator.clipboard.writeText(analysisContent)
+      setIsCopied(true)
+      toast.success('Análisis copiado al portapapeles')
+      setTimeout(() => setIsCopied(false), 2000)
+    } catch (err) {
+      toast.error('No se pudo copiar el texto')
+    }
   }
 
   return (
@@ -101,11 +116,26 @@ export function AnalysisPanel({ initialKPIs }: Props) {
 
       {/* Result Panel */}
       <Card className="min-h-[200px]">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <FileText className="w-4 h-4 text-muted-foreground" />
             Análisis Generado
           </CardTitle>
+          {analysisContent && !isLoading && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-2"
+              onClick={handleCopy}
+            >
+              {isCopied ? (
+                <Check className="w-3.5 h-3.5 text-success" />
+              ) : (
+                <Copy className="w-3.5 h-3.5" />
+              )}
+              {isCopied ? 'Copiado' : 'Copiar Markdown'}
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {/* Idle state */}
