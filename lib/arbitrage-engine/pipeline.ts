@@ -2,6 +2,8 @@ import { createContext, pipe, type EvalContext } from "./types";
 import type { OpportunityInput, OpportunityOutput } from "@/lib/schemas";
 import { OpportunityOutputSchema } from "@/lib/schemas";
 import { validateSnapshotFreshness } from "./steps/validate-freshness";
+import { normalizeCurrency } from "./steps/currency-normalization";
+import { detectOutliers } from "./steps/outlier-detection";
 import { calculateGrossROI } from "./steps/calculate-roi";
 import { applyFeeImpact } from "./steps/apply-fees";
 import { applySlippageModel } from "./steps/slippage-model";
@@ -13,6 +15,8 @@ import { classify } from "./steps/classify";
 
 const evaluationPipeline = pipe(
   validateSnapshotFreshness,
+  normalizeCurrency,
+  detectOutliers,
   calculateGrossROI,
   applyFeeImpact,
   applySlippageModel,
@@ -48,6 +52,22 @@ export function evaluateAllPairs(
 ): OpportunityOutput[] {
   const results: OpportunityOutput[] = [];
 
+  // 1. Calcular tasas de referencia en tiempo real (Dólar Cripto)
+  const arsP2P = snapshots.filter(s => s.platform.includes("p2p") && s.asset === "USDT" && s.baseCurrency === "ARS");
+  const vesP2P = snapshots.filter(s => s.platform.includes("p2p") && s.asset === "USDT" && s.baseCurrency === "VES");
+
+  let usdArsRate = 1470; 
+  let usdVesRate = 36.5;
+
+  if (arsP2P.length > 0) {
+    usdArsRate = arsP2P.reduce((acc, s) => acc + s.price, 0) / arsP2P.length;
+    console.info(`[engine] Real-time USD/ARS rate: ${usdArsRate.toFixed(2)}`);
+  }
+  if (vesP2P.length > 0) {
+    usdVesRate = vesP2P.reduce((acc, s) => acc + s.price, 0) / vesP2P.length;
+    console.info(`[engine] Real-time USD/VES rate: ${usdVesRate.toFixed(2)}`);
+  }
+
   for (let i = 0; i < snapshots.length; i++) {
     for (let j = 0; j < snapshots.length; j++) {
       if (i === j) continue;
@@ -65,6 +85,8 @@ export function evaluateAllPairs(
           networkCostUSD,
           userConfig,
           referenceTime,
+          // Inyectamos las tasas calculadas
+          ...({ usdArsRate, usdVesRate } as any) 
         });
         results.push(output);
       } catch (err) {

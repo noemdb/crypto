@@ -3,6 +3,8 @@ import { z } from "zod";
 export const PlatformEnum = z.enum([
   "binance_spot",
   "binance_p2p",
+  "binance_p2p_ves",
+  "binance_p2p_ars",
   "bybit_spot",
   "bybit_p2p",
   "airtm",

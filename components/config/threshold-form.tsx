@@ -143,6 +143,47 @@ export function ThresholdForm({ initialConfig }: Props) {
               </FormItem>
             )}
           />
+
+          <FormField
+            name="alertTelegram"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Telegram Chat ID</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Ej: 123456789"
+                    {...field}
+                    value={field.value ?? ""}
+                  />
+                </FormControl>
+                <FormDescription>
+                  ID numérico obtenido de @BotFather / getUpdates.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            name="alertEmail"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email de Alertas</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="tu@email.com"
+                    {...field}
+                    value={field.value ?? ""}
+                  />
+                </FormControl>
+                <FormDescription>
+                  (Opcional) Para recibir notificaciones por correo.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <div className="flex justify-end gap-3 border-t pt-6">

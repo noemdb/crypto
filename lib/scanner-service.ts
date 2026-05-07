@@ -4,6 +4,7 @@ import { getOrCreateDefaultUserConfig } from "./db/queries/user-config";
 import { insertOpportunity } from "./db/queries/opportunities";
 import { dbSnapshotToSchema } from "./db/normalize";
 import { evaluateAllPairs } from "./arbitrage-engine/pipeline";
+import { sendTelegramAlert } from "./alerts/telegram";
 
 import { prisma } from "./db/prisma";
 import type { Platform, Asset } from "./schemas";
@@ -29,9 +30,18 @@ export async function triggerFullScan() {
 
   console.info("[scanner-service] Starting full manual scan...");
 
+  const activeConfigs = [...SCRAPE_CONFIG];
+  if (process.env.ENABLE_P2P_SCRAPING === "true") {
+    activeConfigs.push({
+      platform: "binance_p2p",
+      assets: ["USDT", "USDC"],
+    });
+    // bybit_p2p se añadirá cuando esté estable
+  }
+
   // 1. Scrape all configured pairs in parallel
   const scrapePromises: Promise<any>[] = [];
-  for (const config of SCRAPE_CONFIG) {
+  for (const config of activeConfigs) {
     for (const asset of config.assets) {
       scrapePromises.push(runScrape(config.platform, asset));
     }
@@ -111,8 +121,18 @@ export async function triggerFullScan() {
   );
 
   await Promise.allSettled(persistPromises);
-
+  
+  // 4. Alerts
   let alertsSent = 0;
+  
+  if (userConfig.alertTelegram) {
+    const executable = opportunities.filter(o => o.classification === "EXECUTABLE");
+    const alertPromises = executable.map(opp => {
+      alertsSent++;
+      return sendTelegramAlert(opp, userConfig.alertTelegram!);
+    });
+    await Promise.allSettled(alertPromises);
+  }
 
   const durationMs = Date.now() - start;
   console.info(

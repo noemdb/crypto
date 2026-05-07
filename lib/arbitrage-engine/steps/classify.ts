@@ -49,11 +49,13 @@ export function classify(ctx: EvalContext): EvalContext {
     );
   }
 
-  const classification = updatedCtx.rejected
-    ? "INVALID"
-    : roiAdjusted >= minROI && fillProbability >= minFillProbability
-      ? "EXECUTABLE"
-      : "MARGINAL";
+  let classification: import("@/lib/schemas").Classification = "MARGINAL";
+
+  if (updatedCtx.rejected) {
+    classification = "INVALID";
+  } else if (roiAdjusted >= minROI && fillProbability >= minFillProbability) {
+    classification = "EXECUTABLE";
+  }
 
   return {
     ...updatedCtx,

@@ -1393,13 +1393,11 @@ export function OpportunityAlertEmail({
 
 ---
 
-### Fase 2 — Robustez y P2P (Semanas 5–8)
-
-| Semana | Entregable |
-|---|---|
-| 5–6 | Playwright Worker en Droplet. Scrapers P2P Binance + Bybit. |
-| 7 | Outlier detection en precios P2P. Calibración fill_probability. |
-| 8 | Telegram alerts. Webhook support. Export CSV via UploadThing. |
+| Semana | Entregable | Estado |
+|---|---|---|
+| 5–6 | Playwright Worker en Droplet. Scrapers P2P Binance + Bybit. | ✅ Completado (Bybit optimizado con Mobile Stealth) |
+| 7 | Outlier detection en precios P2P. Calibración fill_probability. | ✅ Completado (Cap 0.92 en P2P) |
+| 8 | Telegram alerts. Webhook support. Export CSV via UploadThing. | ✅ Completado (Alertas Telegram operativas) |
 
 **Criterio de salida:** < 5% false positive rate en oportunidades EXECUTABLE medido en 2 semanas.
 
@@ -1449,8 +1447,6 @@ export function OpportunityAlertEmail({
 # ── Base de datos (Neon.tech) ──────────────────────────────────────────────
 DATABASE_URL="postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require&pgbouncer=true"
 DIRECT_URL="postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require"
-# DATABASE_URL usa el connection pooler de Neon (pgbouncer) para runtime
-# DIRECT_URL usa conexión directa — requerido por Prisma para migrations
 
 # ── Auth.js v5 ─────────────────────────────────────────────────────────────
 AUTH_SECRET="..."                    # openssl rand -base64 32
@@ -1511,6 +1507,26 @@ NEXT_PUBLIC_APP_URL="https://yourapp.vercel.app"
 
 ---
 
-*Fin de SPEC_ARBITRAGE_MONITOR v1.1.0-rc1*
-*Próxima revisión: inicio de Fase 2 o resolución de DP-001/002/003/004*
+## 18. Retrospectiva y Logros (Fase 2)
+
+### 18.1 Hardening del Motor de Evaluación
+Se ha implementado una capa de **Data Integrity Engineering** que resuelve los problemas de datos "basura" o irreales:
+- **Normalización de Monedas:** Conversión automática de ARS/VES a USD usando tasas de referencia (Dólar Cripto) calculadas en tiempo real.
+- **Detección de Outliers:** Filtro de precios "gancho" o errores de scraping mediante comparación de desviación estándar.
+- **Clasificación Estricta:** El flag `rejected` ahora tiene prioridad absoluta sobre el ROI, asegurando que solo oportunidades técnicamente viables lleguen al Dashboard.
+- **ROI Sanity Cap:** Bloqueo automático de oportunidades con ROIs absurdos (> 100%) indicativos de errores de parsing.
+
+### 18.2 Estabilización de Scrapers
+- **Bybit P2P Stealth:** Superación de bloqueos de protocolo mediante emulación de entorno móvil e interceptación de recursos innecesarios.
+- **Soporte Regional (VES):** Incorporación del mercado venezolano (Binance P2P VES) con normalización de moneda nativa.
+- **Parsing Resiliente:** Sanitizado de strings de precios para manejar diferentes formatos decimales regionales.
+
+### 18.3 Notificaciones y Configuración
+- **Telegram Integrado:** Sistema de alertas real-time vía BotFather con deduplicación por ventana de tiempo.
+- **Dashboard Extendido:** Inclusión de campos de configuración para Telegram y Email directamente en la UI.
+
+---
+
+*Fin de SPEC_ARBITRAGE_MONITOR v1.2.0-rc1*
+*Próxima revisión: inicio de Fase 3 (Multi-ruta y Simulación)*
 *Stack canónico fijado: Next.js 16.2 · TS 5.x · Tailwind 4.x · Prisma 7 · Neon · Auth.js v5 · Zod 3.x · shadcn/ui · Zustand · RHF 7 · Resend · Recharts · UploadThing · Vercel*

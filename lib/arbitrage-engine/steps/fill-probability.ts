@@ -16,8 +16,10 @@ export function scoreFillProbability(ctx: EvalContext): EvalContext {
   const latencyScore =
     latencyMs < 2000 ? 1.0 : Math.max(0, 1 - (latencyMs - 2000) / 10_000);
 
-  const fillProbability =
-    liquidityScore * 0.5 + volumeScore * 0.3 + latencyScore * 0.2;
+  const fillProbability = Math.min(
+    liquidityScore * 0.5 + volumeScore * 0.3 + latencyScore * 0.2,
+    0.92, // Cap P2P realism (Fase 2)
+  );
 
   return { ...ctx, output: { ...ctx.output, fillProbability } };
 }

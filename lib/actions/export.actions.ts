@@ -2,6 +2,10 @@
 
 import { getAuthenticatedUserId } from "@/lib/auth-helpers";
 import { getOpportunities } from "@/lib/db/queries/opportunities";
+import { UTApi } from "uploadthing/server";
+
+const utapi = new UTApi();
+
 type ExportResult =
   | { success: true; csvContent: string; filename: string; count: number }
   | { success: false; error: string };
@@ -58,7 +62,7 @@ function opportunitiesToCSV(
 
 export async function exportOpportunities(
   classification?: string,
-): Promise<ExportResult> {
+): Promise<ExportResult & { downloadUrl?: string }> {
   // Protección de Server Action
   const userId = await getAuthenticatedUserId();
   if (!userId) return { success: false, error: "No autenticado" };
@@ -74,10 +78,31 @@ export async function exportOpportunities(
 
   const csv = opportunitiesToCSV(rows);
   const filename = `aim-export-${new Date().toISOString().slice(0, 10)}.csv`;
-  return {
-    success: true,
-    csvContent: csv,
-    filename,
-    count: rows.length,
-  };
+
+  try {
+    // UploadThing server-side upload
+    const file = new File([csv], filename, { type: "text/csv" });
+    const response = await utapi.uploadFiles(file);
+
+    if (response.data) {
+      return {
+        success: true,
+        csvContent: csv,
+        filename,
+        count: rows.length,
+        downloadUrl: response.data.url,
+      };
+    } else {
+      throw new Error(response.error?.message || "Upload failed");
+    }
+  } catch (err) {
+    console.error("[export] UploadThing error:", err);
+    // Fallback: retornar solo el contenido si falla UploadThing (para desarrollo local sin keys)
+    return {
+      success: true,
+      csvContent: csv,
+      filename,
+      count: rows.length,
+    };
+  }
 }
