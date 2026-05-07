@@ -82,10 +82,10 @@ export async function testTelegramAlert(chatId: string): Promise<TestResult> {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "AIM";
   const message =
-    `✅ *Conexión exitosa* — Arbitrage Intelligence Monitor\n\n` +
-    `Tu Chat ID \`${chatId}\` está correctamente configurado\\.\n` +
-    `Recibirás alertas aquí cuando se detecten oportunidades EXECUTABLE\\.\n\n` +
-    `_${appUrl}_`;
+    `<b>✅ Conexión exitosa</b> — Arbitrage Intelligence Monitor\n\n` +
+    `Tu Chat ID <code>${chatId}</code> está correctamente configurado.\n` +
+    `Recibirás alertas aquí cuando se detecten oportunidades <b>EXECUTABLE</b>.\n\n` +
+    `<i>${appUrl}</i>`;
 
   try {
     const res = await fetch(
@@ -96,7 +96,7 @@ export async function testTelegramAlert(chatId: string): Promise<TestResult> {
         body: JSON.stringify({
           chat_id: chatId,
           text: message,
-          parse_mode: "MarkdownV2",
+          parse_mode: "HTML",
         }),
       }
     );

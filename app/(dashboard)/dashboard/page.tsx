@@ -61,17 +61,20 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold">Monitor</h1>
-          <p className="text-xs text-muted-foreground">
-            {opportunities.length} oportunidades recientes
-          </p>
+      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">Monitor</h1>
+            <p className="text-sm text-muted-foreground">
+              {opportunities.length} oportunidades analizadas recientemente.
+            </p>
+          </div>
+          <PlatformStatusBar statuses={platformStatuses} />
         </div>
-        <ScannerButton />
+        <div className="w-full md:w-auto">
+          <ScannerButton />
+        </div>
       </div>
-
-      <PlatformStatusBar statuses={platformStatuses} />
 
       {/* Charts row */}
       <div className="grid gap-4 md:grid-cols-2">
