@@ -8,39 +8,42 @@ import { reject } from "../types";
 export const detectPriceAnomalies: PipelineStep = (ctx: EvalContext) => {
   const { buySnapshot, sellSnapshot } = ctx.input;
 
-  // 1. Validar Buy Snapshot (si es P2P)
-  if (buySnapshot.platform.includes("p2p")) {
-    const error = checkP2POutlier(buySnapshot);
-    if (error) return reject(ctx, `OUTLIER_BUY_P2P: ${error}`);
-  }
+  // 1. Validar Buy Snapshot
+  const buyError = checkAnomaly(buySnapshot);
+  if (buyError) return reject(ctx, `OUTLIER_DETECTED (BUY): ${buyError}`);
 
-  // 2. Validar Sell Snapshot (si es P2P)
-  if (sellSnapshot.platform.includes("p2p")) {
-    const error = checkP2POutlier(sellSnapshot);
-    if (error) return reject(ctx, `OUTLIER_SELL_P2P: ${error}`);
-  }
+  // 2. Validar Sell Snapshot
+  const sellError = checkAnomaly(sellSnapshot);
+  if (sellError) return reject(ctx, `OUTLIER_DETECTED (SELL): ${sellError}`);
 
   return ctx;
 };
 
-function checkP2POutlier(snapshot: any): string | null {
-  // Intentamos obtener los ads del metadata (guardados por el scraper)
-  // Nota: El scraper guarda topBuyAds y topSellAds. 
-  // Si estamos evaluando un precio de "Compra" (Ask), lo comparamos contra los otros "Sell Ads".
-  const ads = snapshot.metadata?.topSellAds || snapshot.metadata?.topBuyAds;
-  
-  if (!ads || !Array.isArray(ads) || ads.length < 2) return null;
+function checkAnomaly(snapshot: any): string | null {
+  const { price, baseCurrency, platform, metadata } = snapshot;
 
-  const prices = ads.map((a: any) => parseFloat(a.price)).filter(p => !isNaN(p));
-  if (prices.length < 2) return null;
+  // Validación Cruzada: ARS no puede ser < 10 (probablemente es USD mal etiquetado o error de parsing)
+  if (baseCurrency === "ARS" && price < 10) {
+    return `SUSPICIOUS_ARS_PRICE: ${price} (too low for ARS)`;
+  }
 
-  const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
-  const deviation = Math.abs(snapshot.price - avg) / avg;
+  // Validación P2P vs Mediana de anuncios
+  if (platform.includes("p2p")) {
+    const ads = metadata?.topSellAds || metadata?.topBuyAds;
+    if (ads && Array.isArray(ads) && ads.length >= 2) {
+      const prices = ads.map((a: any) => parseFloat(a.price)).filter(p => !isNaN(p));
+      if (prices.length >= 2) {
+        // Usamos la mediana si es posible, o el promedio
+        const sorted = [...prices].sort((a, b) => a - b);
+        const median = sorted[Math.floor(sorted.length / 2)];
+        const deviation = Math.abs(price - median) / median;
 
-  // Si el precio desvía más del 10% del promedio de los top 5, es una anomalía
-  // (Aumentamos a 10% porque P2P tiene más dispersión que Spot)
-  if (deviation > 0.10) {
-    return `Price ${snapshot.price.toFixed(2)} ${snapshot.baseCurrency} deviates ${(deviation * 100).toFixed(2)}% from platform average (${avg.toFixed(2)})`;
+        // Umbral estricto del 15% solicitado por DE
+        if (deviation > 0.15) {
+          return `price=${price.toFixed(2)} median=${median.toFixed(2)} deviation=${(deviation * 100).toFixed(2)}%`;
+        }
+      }
+    }
   }
 
   return null;

@@ -61,13 +61,15 @@ export const binanceP2PVESScraper: Scraper = {
     const sellAds = sellAdsRes.data.data || [];
     const buyAds = buyAdsRes.data.data || [];
 
-    if (sellAds.length === 0 || buyAds.length === 0) {
-      throw new Error("No P2P ads found on Binance VES");
-    }
+    // Sanitizado de strings y parsing seguro (Distinguished Engineer Rule)
+    const sanitizeNum = (s: string) => parseFloat(s.replace(/[^0-9.-]/g, ""));
+    
+    const bestAsk = sanitizeNum(sellAds[0]!.adv.price);
+    const bestBid = sanitizeNum(buyAds[0]!.adv.price);
 
-    const parsePrice = (p: string) => parseFloat(p.replace(/,/g, ""));
-    const bestAsk = parsePrice(sellAds[0]!.adv.price);
-    const bestBid = parsePrice(buyAds[0]!.adv.price);
+    // Cálculo de liquidez real disponible
+    const tradableQty = sanitizeNum(sellAds[0]!.adv.surplusAmount);
+    const availableLiquidity = tradableQty; // En VES simplificamos o usamos surplus
 
     const snapshot: import("@/lib/schemas").RawSnapshotInput = {
       platform: "binance_p2p_ves",
@@ -76,7 +78,7 @@ export const binanceP2PVESScraper: Scraper = {
       price: (bestAsk + bestBid) / 2,
       priceBid: bestBid,
       priceAsk: bestAsk,
-      availableLiquidity: parseFloat(sellAds[0]!.adv.surplusAmount),
+      availableLiquidity,
       fee: 0,
       latencyMs: (sellAdsRes.latencyMs + buyAdsRes.latencyMs) / 2,
       scrapedAt: new Date().toISOString(),

@@ -79,11 +79,16 @@ export const binanceP2PScraper: Scraper = {
       throw new Error("No P2P ads found on Binance");
     }
 
-    // Sanitizar y parsear precios (prevenir errores con comas o formatos de moneda)
-    const parsePrice = (p: string) => parseFloat(p.replace(/,/g, ""));
+    // Sanitizado de strings y parsing seguro (Distinguished Engineer Rule)
+    const sanitizeNum = (s: string) => parseFloat(s.replace(/[^0-9.-]/g, ""));
     
-    const bestAsk = parsePrice(sellAds[0]!.adv.price);
-    const bestBid = parsePrice(buyAds[0]!.adv.price);
+    const bestAsk = sanitizeNum(sellAds[0]!.adv.price);
+    const bestBid = sanitizeNum(buyAds[0]!.adv.price);
+
+    // Cálculo de liquidez real disponible
+    const tradableQty = sanitizeNum(sellAds[0]!.adv.surplusAmount);
+    const maxTrans = sanitizeNum(sellAds[0]!.adv.maxSingleTransAmount);
+    const availableLiquidity = Math.min(tradableQty, maxTrans);
 
     const snapshot: import("@/lib/schemas").RawSnapshotInput = {
       platform: "binance_p2p",
@@ -92,8 +97,8 @@ export const binanceP2PScraper: Scraper = {
       price: (bestAsk + bestBid) / 2,
       priceBid: bestBid,
       priceAsk: bestAsk,
-      availableLiquidity: parseFloat(sellAds[0]!.adv.surplusAmount),
-      fee: 0, // En P2P Binance el taker suele pagar 0%
+      availableLiquidity,
+      fee: 0,
       latencyMs: (sellAdsRes.latencyMs + buyAdsRes.latencyMs) / 2,
       scrapedAt: new Date().toISOString(),
       metadata: {

@@ -4,6 +4,12 @@ import { reject } from "../types";
 
 export function classify(ctx: EvalContext): EvalContext {
   const { minROI, minFillProbability } = ctx.input.userConfig;
+
+  // 1. VALIDACIÓN TEMPRANA: Si ya fue rechazado por integridad, frescura o realismo, es INVALID
+  if (ctx.rejected) {
+    return finalizeClassification(ctx, "INVALID");
+  }
+
   const roiGross = ctx.output.roiGross ?? 0;
   const feesImpact = ctx.output.feesImpact ?? 0;
   const slippageImpact = ctx.output.slippageImpact ?? 0;
@@ -11,16 +17,14 @@ export function classify(ctx: EvalContext): EvalContext {
   const roiAdjusted = roiGross - feesImpact - slippageImpact - networkImpact;
   const fillProbability = ctx.output.fillProbability ?? 1.0;
   const liquidityRatio = ctx.output.liquidityRatio ?? 0;
-  const latencyRiskMs =
-    ctx.output.latencyRiskMs ??
-    Math.max(ctx.input.buySnapshot.latencyMs, ctx.input.sellSnapshot.latencyMs);
-  const snapshotAge = ctx.output.snapshotAge ?? { buyMs: 0, sellMs: 0 };
 
-  // Invariante: roiAdjusted debe ser la resta exacta de sus componentes
-  // Si difiere > 0.0001%, hay un bug en el pipeline
-  const checksum = roiGross - feesImpact - slippageImpact - networkImpact;
-  if (Math.abs(checksum - roiAdjusted) > 0.0001) {
-    throw new Error(`ROI invariant violated: ${checksum} !== ${roiAdjusted}`);
+  // 2. ROI SANITY CAP (Defensa contra errores de normalización o outliers no detectados)
+  const MAX_SANITY_ROI = parseFloat(process.env.MAX_SANITY_ROI ?? "25.0");
+  if (roiAdjusted > MAX_SANITY_ROI) {
+    return finalizeClassification(
+      reject(ctx, `SUSPICIOUS_ROI_EXCEEDS_SANITY_CAP: ${roiAdjusted.toFixed(2)}% > ${MAX_SANITY_ROI}%`),
+      "INVALID"
+    );
   }
 
   let updatedCtx = ctx;
@@ -57,10 +61,29 @@ export function classify(ctx: EvalContext): EvalContext {
     classification = "EXECUTABLE";
   }
 
+  return finalizeClassification(updatedCtx, classification);
+}
+
+function finalizeClassification(
+  ctx: EvalContext,
+  classification: import("@/lib/schemas").Classification
+): EvalContext {
+  const roiGross = ctx.output.roiGross ?? 0;
+  const feesImpact = ctx.output.feesImpact ?? 0;
+  const slippageImpact = ctx.output.slippageImpact ?? 0;
+  const networkImpact = ctx.output.networkImpact ?? 0;
+  const roiAdjusted = roiGross - feesImpact - slippageImpact - networkImpact;
+  const fillProbability = ctx.output.fillProbability ?? 1.0;
+  const liquidityRatio = ctx.output.liquidityRatio ?? 0;
+  const latencyRiskMs =
+    ctx.output.latencyRiskMs ??
+    Math.max(ctx.input.buySnapshot.latencyMs, ctx.input.sellSnapshot.latencyMs);
+  const snapshotAge = ctx.output.snapshotAge ?? { buyMs: 0, sellMs: 0 };
+
   return {
-    ...updatedCtx,
+    ...ctx,
     output: {
-      ...updatedCtx.output,
+      ...ctx.output,
       id: createId(),
       route: `${ctx.input.buySnapshot.platform}→${ctx.input.sellSnapshot.platform}`,
       buyPlatform: ctx.input.buySnapshot.platform,
@@ -78,7 +101,7 @@ export function classify(ctx: EvalContext): EvalContext {
       liquidityRatio,
       latencyRiskMs,
       classification,
-      rejectionReasons: updatedCtx.rejectionReasons,
+      rejectionReasons: ctx.rejectionReasons,
       evaluatedAt: new Date().toISOString(),
       snapshotAge,
     },

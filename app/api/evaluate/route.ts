@@ -83,7 +83,18 @@ export async function POST(request: NextRequest) {
     )
     .map((r) => r.value.id);
 
-  let alertsSent = 0;
+  // 5. Enviar Alertas (Telegram/Email)
+  // Mapeamos los IDs de DB de vuelta a los objetos de oportunidad para el manager
+  const opportunitiesWithIds = opportunities.map((op, index) => {
+    const dbRes = persistedOpportunities[index];
+    return {
+      ...op,
+      id: dbRes?.status === "fulfilled" ? dbRes.value.id : op.id,
+    };
+  });
+
+  const { processNotifications } = await import("@/lib/notifications/manager");
+  const alertsSent = await processNotifications(firstUser.id, opportunitiesWithIds);
 
   const counts = {
     executable: opportunities.filter((o) => o.classification === "EXECUTABLE")

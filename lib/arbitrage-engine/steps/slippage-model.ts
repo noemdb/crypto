@@ -32,7 +32,7 @@ export function applySlippageModel(ctx: EvalContext): EvalContext {
       ? utilizationRatio * 0.002 * 100
       : (0.0006 + Math.pow(utilizationRatio - 0.3, 1.5) * 0.05) * 100;
 
-  const slippageImpact = baseSlippage + liquidityPenalty;
+  const slippageImpact = Math.max(0, baseSlippage + liquidityPenalty);
 
   return {
     ...applyImpact(ctx, "slippageImpact", slippageImpact),
