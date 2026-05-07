@@ -8,7 +8,7 @@ export function evaluateLiquidity(ctx: EvalContext): EvalContext {
     sellSnapshot.availableLiquidity,
   );
 
-  let updatedCtx = {
+  let updatedCtx: EvalContext = {
     ...ctx,
     output: {
       ...ctx.output,
