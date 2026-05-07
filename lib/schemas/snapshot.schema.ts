@@ -7,6 +7,7 @@ export const PlatformEnum = z.enum([
   "binance_p2p_ars",
   "bybit_spot",
   "bybit_p2p",
+  "bybit_p2p_ves",
   "airtm",
   "kontigo",
 ]);

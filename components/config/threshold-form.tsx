@@ -184,6 +184,67 @@ export function ThresholdForm({ initialConfig }: Props) {
               </FormItem>
             )}
           />
+
+          <FormField
+            name="enabledPlatforms"
+            render={({ field }) => (
+              <FormItem className="sm:col-span-2">
+                <FormLabel>Plataformas Habilitadas</FormLabel>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {[
+                    "binance_spot",
+                    "bybit_spot",
+                    "binance_p2p",
+                    "binance_p2p_ves",
+                    "bybit_p2p",
+                    "bybit_p2p_ves",
+                  ].map((p) => (
+                    <label key={p} className="flex items-center gap-2 text-sm p-2 rounded border hover:bg-accent cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={field.value.includes(p as any)}
+                        onChange={(e) => {
+                          const val = e.target.checked
+                            ? [...field.value, p]
+                            : field.value.filter((v: string) => v !== p);
+                          field.onChange(val);
+                        }}
+                      />
+                      {p.replace(/_/g, " ")}
+                    </label>
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            name="monitoredAssets"
+            render={({ field }) => (
+              <FormItem className="sm:col-span-2">
+                <FormLabel>Assets Monitoreados</FormLabel>
+                <div className="flex gap-2">
+                  {["USDT", "USDC", "BTC", "ETH"].map((a) => (
+                    <label key={a} className="flex items-center gap-2 text-sm p-2 rounded border hover:bg-accent cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={field.value.includes(a as any)}
+                        onChange={(e) => {
+                          const val = e.target.checked
+                            ? [...field.value, a]
+                            : field.value.filter((v: string) => v !== a);
+                          field.onChange(val);
+                        }}
+                      />
+                      {a}
+                    </label>
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <div className="flex justify-end gap-3 border-t pt-6">
