@@ -8,6 +8,11 @@ import { Toaster } from "@/components/ui/sonner";
 export const metadata: Metadata = {
   title: 'AIM — Arbitrage Intelligence Monitor',
   description: 'Sistema de monitoreo de oportunidades de arbitraje',
+  icons: {
+    icon: [
+      { url: '/aim-logo.svg', type: 'image/svg+xml' },
+    ],
+  },
 }
 
 export default function RootLayout({

@@ -6,6 +6,9 @@ import { getAuthenticatedUserId } from "@/lib/auth-helpers";
 import { UserConfigFormSchema } from "@/lib/schemas";
 
 type ActionResult = { success: true } | { success: false; error: string };
+type TestResult =
+  | { success: true; message: string }
+  | { success: false; error: string };
 
 export async function updateUserConfig(input: unknown): Promise<ActionResult> {
   // Protección de Server Action: sin middleware.ts, cada action verifica su propia sesión.
@@ -55,4 +58,63 @@ export async function updateUserConfig(input: unknown): Promise<ActionResult> {
   revalidatePath("/dashboard/config");
   revalidatePath("/dashboard");
   return { success: true };
+}
+
+/**
+ * Envía un mensaje de prueba al Chat ID de Telegram del usuario
+ * para verificar que el bot y el chat están correctamente configurados.
+ */
+export async function testTelegramAlert(chatId: string): Promise<TestResult> {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return { success: false, error: "No autenticado" };
+
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) {
+    return {
+      success: false,
+      error: "TELEGRAM_BOT_TOKEN no está configurado en el servidor.",
+    };
+  }
+
+  if (!chatId?.trim()) {
+    return { success: false, error: "Chat ID vacío." };
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "AIM";
+  const message =
+    `✅ *Conexión exitosa* — Arbitrage Intelligence Monitor\n\n` +
+    `Tu Chat ID \`${chatId}\` está correctamente configurado\\.\n` +
+    `Recibirás alertas aquí cuando se detecten oportunidades EXECUTABLE\\.\n\n` +
+    `_${appUrl}_`;
+
+  try {
+    const res = await fetch(
+      `https://api.telegram.org/bot${token}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: "MarkdownV2",
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!data.ok) {
+      return {
+        success: false,
+        error: data.description ?? "Error desconocido de la API de Telegram.",
+      };
+    }
+
+    return { success: true, message: "Mensaje de prueba enviado correctamente." };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Error de red al contactar Telegram.",
+    };
+  }
 }

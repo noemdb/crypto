@@ -16,11 +16,23 @@ export default async function LoginPage({
   return (
     <main className="min-h-screen flex items-center justify-center bg-muted/40">
       <div className="w-full max-w-sm space-y-6 p-8">
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight">AIM</h1>
-          <p className="text-sm text-muted-foreground">
-            Arbitrage Intelligence Monitor
-          </p>
+        <div className="text-center space-y-3">
+          {/* Brand logo */}
+          <div className="flex justify-center">
+            <img
+              src="/aim-logo.svg"
+              alt="AIM logo"
+              width={72}
+              height={72}
+              className="drop-shadow-[0_0_18px_rgba(56,189,248,0.45)]"
+            />
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">AIM</h1>
+            <p className="text-sm text-muted-foreground">
+              Arbitrage Intelligence Monitor
+            </p>
+          </div>
         </div>
 
         {error === 'CredentialsSignin' && (

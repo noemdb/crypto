@@ -52,8 +52,18 @@ export function OpportunityCard({
     return () => clearInterval(interval);
   }, [ts, displayTimezone]);
 
+  const isExecutable = opportunity.classification === "EXECUTABLE";
+  const hasPositiveROI = opportunity.roiAdjusted > 0;
+
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card
+      className={[
+        "transition-shadow",
+        isExecutable
+          ? "hover:shadow-[0_0_16px_2px_rgba(52,211,153,0.12)] border-l-[3px] border-l-success/60 bg-success/[0.03]"
+          : "hover:shadow-md",
+      ].join(" ")}
+    >
       <CardHeader className="pb-2 flex flex-row items-start justify-between">
         <div>
           <p className="font-mono text-sm font-semibold">
@@ -78,10 +88,38 @@ export function OpportunityCard({
         <div className="flex items-baseline justify-between">
           <span className="text-xs text-muted-foreground">ROI Ajustado</span>
           <span
-            className={`text-lg font-bold ${
-              opportunity.roiAdjusted >= 0 ? "text-success" : "text-destructive"
+            className={`flex items-center gap-1 text-lg font-bold ${
+              hasPositiveROI ? "text-success" : "text-destructive"
             }`}
           >
+            {hasPositiveROI && (
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 10 10"
+                width="10"
+                height="10"
+                className="shrink-0 opacity-80"
+                fill="currentColor"
+              >
+                {/* upward-trend mini-spark: right-angle triangle pointing up-right */}
+                <polyline
+                  points="1,9 4,5 6,7 9,1"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <polyline
+                  points="6.5,1 9,1 9,3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
             {opportunity.roiAdjusted.toFixed(2)}%
           </span>
         </div>

@@ -23,6 +23,8 @@ import { URL } from "node:url";
     currentExecution: boolean;
     intervalSeconds: number;
     lastRunAt: string | null;
+    /** ISO timestamp of the next scheduled online scan. Null when not in online mode. */
+    nextRunAt: string | null;
     lastStatus: "success" | "failure" | null;
     lastError: string | null;
     sourceIpMode: "device-executor";
@@ -35,6 +37,7 @@ import { URL } from "node:url";
     currentExecution: false,
     intervalSeconds: INTERVAL_SECONDS,
     lastRunAt: null,
+    nextRunAt: null,
     lastStatus: null,
     lastError: null,
     sourceIpMode: "device-executor",
@@ -42,13 +45,14 @@ import { URL } from "node:url";
     };
 
   function getResponseState() {
-    const running = state.onlineActive || state.currentExecution;
+    const running = state.currentExecution;
     const mode: WorkerMode = state.onlineActive ? "online" : state.lastMode;
     return {
       mode,
       running,
       intervalSeconds: state.intervalSeconds,
       lastRunAt: state.lastRunAt,
+      nextRunAt: state.nextRunAt,
       lastStatus: state.lastStatus,
       lastError: state.lastError,
       sourceIpMode: state.sourceIpMode,
@@ -76,6 +80,7 @@ import { URL } from "node:url";
       state.timer = null;
     }
     state.onlineActive = false;
+    state.nextRunAt = null;
     if (!state.currentExecution) {
       state.lastMode = "idle";
     }
@@ -114,6 +119,8 @@ import { URL } from "node:url";
       return;
     }
 
+    // Clear nextRunAt while scan is running
+    state.nextRunAt = null;
     const scanResult = await performScan(false);
     if (!scanResult.success) {
       console.error("[worker] Online scan failed:", scanResult.error);
@@ -123,6 +130,8 @@ import { URL } from "node:url";
       return;
     }
 
+    // Record when the next scan will fire before scheduling it
+    state.nextRunAt = new Date(Date.now() + state.intervalSeconds * 1000).toISOString();
     state.timer = setTimeout(scheduleOnlineScan, state.intervalSeconds * 1000);
     }
 

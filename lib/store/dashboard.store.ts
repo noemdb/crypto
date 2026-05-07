@@ -26,6 +26,12 @@ type DashboardStore = {
   /** Zona horaria para mostrar timestamps. "local" = detectar del navegador. */
   displayTimezone: string;
   setDisplayTimezone: (tz: string) => void;
+
+  isSidebarCollapsed: boolean;
+  toggleSidebar: () => void;
+
+  isMobileMenuOpen: boolean;
+  setMobileMenuOpen: (open: boolean) => void;
 };
 
 export const useDashboardStore = create<DashboardStore>()(
@@ -58,6 +64,12 @@ export const useDashboardStore = create<DashboardStore>()(
 
       displayTimezone: "local",
       setDisplayTimezone: (tz) => set({ displayTimezone: tz }),
+
+      isSidebarCollapsed: false,
+      toggleSidebar: () => set((s) => ({ isSidebarCollapsed: !s.isSidebarCollapsed })),
+
+      isMobileMenuOpen: false,
+      setMobileMenuOpen: (open) => set({ isMobileMenuOpen: open }),
     }),
     {
       name: "aim-dashboard",
