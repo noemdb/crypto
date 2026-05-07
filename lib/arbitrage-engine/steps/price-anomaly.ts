@@ -36,6 +36,9 @@ function checkAnomaly(snapshot: any): string | null {
         // Usamos la mediana si es posible, o el promedio
         const sorted = [...prices].sort((a, b) => a - b);
         const median = sorted[Math.floor(sorted.length / 2)];
+        
+        if (median === undefined || median === 0) return null;
+
         const deviation = Math.abs(price - median) / median;
 
         // Umbral estricto del 15% solicitado por DE
