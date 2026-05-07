@@ -5,6 +5,8 @@ export const TTL_MS: Record<Platform, number> = {
   binance_spot: 30_000,
   bybit_spot: 30_000,
   binance_p2p: 120_000,
+  binance_p2p_ves: 120_000,
+  binance_p2p_ars: 120_000,
   bybit_p2p: 120_000,
   airtm: 180_000,
   kontigo: 180_000,
