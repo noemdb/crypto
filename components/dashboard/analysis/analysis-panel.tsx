@@ -5,8 +5,15 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { GenerateButton } from './generate-button'
 import { KPICards } from './kpi-cards'
-import { Sparkles, AlertCircle, FileText } from 'lucide-react'
+import { Sparkles, AlertCircle, FileText, Loader2 } from 'lucide-react'
 import type { AnalysisKPIs } from '@/lib/actions/analysis.actions'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 
 // Renderizador Markdown liviano — convierte a HTML básico sin dependencias externas
 function renderMarkdown(md: string): string {
@@ -52,6 +59,27 @@ export function AnalysisPanel({ initialKPIs }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* Loading Dialog */}
+      <Dialog open={isLoading}>
+        <DialogContent className="sm:max-w-md" showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin text-brand-primary" />
+              Procesando Análisis
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              Estamos interpretando las oportunidades recientes con Inteligencia Artificial.
+              Esto puede tomar entre 5 y 15 segundos.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center py-6">
+             <div className="relative">
+                <Sparkles className="w-12 h-12 text-brand-primary animate-pulse" />
+             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* KPI Cards */}
       <KPICards kpis={kpis} />
 
@@ -88,21 +116,6 @@ export function AnalysisPanel({ initialKPIs }: Props) {
                 Presiona <strong>Generar análisis</strong> para obtener
                 <br />
                 una interpretación inteligente de los datos.
-              </p>
-            </div>
-          )}
-
-          {/* Loading state */}
-          {isLoading && (
-            <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <div className="relative">
-                <Sparkles className="w-8 h-8 text-brand-primary animate-pulse" />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Analizando oportunidades con IA...
-              </p>
-              <p className="text-xs text-muted-foreground/60">
-                Esto puede tomar 5–15 segundos
               </p>
             </div>
           )}

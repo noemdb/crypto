@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import type { Session } from "next-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TimezoneSelector } from "@/components/timezone-selector";
-import { Menu, X, Shield, Activity, BarChart3, Settings, LogOut } from "lucide-react";
+import { Menu, X, Shield, Activity, BarChart3, Settings, LogOut, Brain } from "lucide-react";
 import { useDashboardStore } from "@/lib/store/dashboard.store";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -18,6 +18,7 @@ type Props = {
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Monitor", icon: Activity },
   { href: "/dashboard/opportunities", label: "Historial", icon: BarChart3 },
+  { href: "/dashboard/analysis", label: "Análisis IA", icon: Brain },
   { href: "/dashboard/config", label: "Configuración", icon: Settings },
 ];
 
