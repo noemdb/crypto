@@ -6,9 +6,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
+import { PlatformEnum, AssetEnum } from "@/lib/schemas";
+
 export default async function ConfigPage() {
   const session = await requireAuth();
   const config = await getOrCreateDefaultUserConfig(session.user.id);
+
+  // Sanitizar plataformas y assets para evitar errores de validación si hay valores obsoletos en la DB
+  const validPlatforms = config.enabledPlatforms.filter((p: any) => 
+    PlatformEnum.options.includes(p)
+  );
+  const validAssets = config.monitoredAssets.filter((a: any) => 
+    AssetEnum.options.includes(a)
+  );
 
   // Convertir para el formulario (InitialConfig necesita ser serializable)
   const initialValues = {
@@ -19,8 +29,8 @@ export default async function ConfigPage() {
     alertEmail: config.alertEmail,
     alertTelegram: config.alertTelegram,
     alertDedupeWindowMin: config.alertDedupeWindowMin,
-    enabledPlatforms: config.enabledPlatforms,
-    monitoredAssets: config.monitoredAssets,
+    enabledPlatforms: validPlatforms,
+    monitoredAssets: validAssets,
   };
 
   return (

@@ -43,10 +43,9 @@ type PlatformMeta = {
 const PLATFORMS: PlatformMeta[] = [
   { id: "binance_spot",    label: "Binance Spot",       tag: "SPOT",  color: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" },
   { id: "bybit_spot",      label: "Bybit Spot",         tag: "SPOT",  color: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" },
-  { id: "binance_p2p",     label: "Binance P2P (USD)",  tag: "P2P",   color: "bg-sky-500/15 text-sky-400 border-sky-500/30" },
+  { id: "mexc_spot",       label: "MEXC Spot (0%)",     tag: "SPOT",  color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
+  { id: "okx_spot",        label: "OKX Spot",           tag: "SPOT",  color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
   { id: "binance_p2p_ves", label: "Binance P2P (VES)",  tag: "P2P",   color: "bg-sky-500/15 text-sky-400 border-sky-500/30" },
-  { id: "binance_p2p_ars", label: "Binance P2P (ARS)",  tag: "P2P",   color: "bg-sky-500/15 text-sky-400 border-sky-500/30" },
-  { id: "bybit_p2p",       label: "Bybit P2P (USD)",    tag: "P2P",   color: "bg-sky-500/15 text-sky-400 border-sky-500/30" },
   { id: "bybit_p2p_ves",   label: "Bybit P2P (VES)",    tag: "P2P",   color: "bg-sky-500/15 text-sky-400 border-sky-500/30" },
   { id: "airtm",           label: "AirTM",              tag: "FIAT",  color: "bg-violet-500/15 text-violet-400 border-violet-500/30" },
   { id: "kontigo",         label: "Kontigo",            tag: "FIAT",  color: "bg-violet-500/15 text-violet-400 border-violet-500/30" },

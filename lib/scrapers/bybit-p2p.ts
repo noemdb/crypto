@@ -26,7 +26,7 @@ async function getBrowser() {
   return sharedBrowser;
 }
 
-export async function scrapeBybitP2P(asset: Asset, fiat: "ARS" | "VES"): Promise<ScraperResult> {
+export async function scrapeBybitP2P(asset: Asset, fiat: "VES"): Promise<ScraperResult> {
   const start = Date.now();
   const browser = await getBrowser();
   
@@ -74,7 +74,7 @@ export async function scrapeBybitP2P(asset: Asset, fiat: "ARS" | "VES"): Promise
     const bestAsk = sanitizeNum(askAds[0]!.price!);
 
     const snapshot: import("@/lib/schemas").RawSnapshotInput = {
-      platform: fiat === "VES" ? "bybit_p2p_ves" : "bybit_p2p",
+      platform: "bybit_p2p_ves",
       asset,
       baseCurrency: fiat,
       price: (bestBid + bestAsk) / 2,

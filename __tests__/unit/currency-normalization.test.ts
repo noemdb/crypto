@@ -3,14 +3,8 @@ import { calculateNormalizedPrice } from "@/lib/arbitrage-engine/steps/currency-
 
 describe("Currency Normalization Unit Tests", () => {
   const rates = {
-    usdArs: 1467,
     usdVes: 50,
   };
-
-  test("should normalize ARS correctly (1467 / 1467 = 1.0)", () => {
-    const result = calculateNormalizedPrice(1467, "ARS", rates);
-    expect(result).toBe(1.0);
-  });
 
   test("should normalize VES correctly (50 / 50 = 1.0)", () => {
     const result = calculateNormalizedPrice(50, "VES", rates);
@@ -23,12 +17,12 @@ describe("Currency Normalization Unit Tests", () => {
   });
 
   test("should handle missing rates gracefully", () => {
-    const result = calculateNormalizedPrice(1000, "ARS", {});
+    const result = calculateNormalizedPrice(1000, "VES", {});
     expect(result).toBe(1000); // Should fallback to 1.0 rate
   });
 
   test("should handle zero rate gracefully", () => {
-    const result = calculateNormalizedPrice(1000, "ARS", { usdArs: 0 });
+    const result = calculateNormalizedPrice(1000, "VES", { usdVes: 0 });
     expect(result).toBe(1000); // Should fallback to 1.0 rate and not divide by zero
   });
 });
