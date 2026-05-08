@@ -14,6 +14,21 @@ export const OpportunityInputSchema = z.object({
   referenceTime: z.number().optional(),
 });
 
+export const TriangularOpportunityInputSchema = z.object({
+  exchange: z.string(),
+  snapshots: z.array(MarketSnapshotSchema).length(3),
+  capitalAmount: z.number().positive(),
+  userConfig: UserConfigSchema,
+  referenceTime: z.number().optional(),
+});
+
+export const OpportunityStepSchema = z.object({
+  platform: z.string(),
+  pair: z.string(),
+  price: z.number(),
+  action: z.enum(["BUY", "SELL"]),
+});
+
 export const OpportunityOutputSchema = z.object({
   id: z.string().cuid2(),
   route: z.string(),
@@ -38,8 +53,13 @@ export const OpportunityOutputSchema = z.object({
   snapshotAge: z.object({
     buyMs: z.number(),
     sellMs: z.number(),
+    intermediateMs: z.number().optional(),
   }),
+  isTriangular: z.boolean().optional(),
+  triangularSteps: z.array(OpportunityStepSchema).optional(),
 });
 
 export type OpportunityInput = z.infer<typeof OpportunityInputSchema>;
+export type TriangularOpportunityInput = z.infer<typeof TriangularOpportunityInputSchema>;
 export type OpportunityOutput = z.infer<typeof OpportunityOutputSchema>;
+export type OpportunityStep = z.infer<typeof OpportunityStepSchema>;

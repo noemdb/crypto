@@ -3,7 +3,8 @@ import { reject, type EvalContext, type PipelineStep } from "../types";
 /**
  * Valida que la oportunidad sea realista después de la normalización.
  */
-export const validateRealism: PipelineStep = (ctx: EvalContext) => {
+export function validateRealism(ctx: EvalContext): EvalContext {
+  if (!("buySnapshot" in ctx.input) || !("sellSnapshot" in ctx.input)) return ctx;
   const { buySnapshot, sellSnapshot } = ctx.input;
 
   // 1. VALIDACIÓN CRÍTICA: Compatibilidad de Moneda Base

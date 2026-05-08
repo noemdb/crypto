@@ -96,12 +96,6 @@ export async function scrapeBybitP2P(asset: Asset, fiat: "ARS" | "VES"): Promise
   }
 }
 
-export const bybitP2PScraper: Scraper = {
-  platform: "bybit_p2p",
-  supportedAssets: ["USDT", "USDC", "BTC", "ETH"],
-  scrape: (asset: Asset) => scrapeBybitP2P(asset, "ARS"),
-};
-
 export const bybitP2PVESScraper: Scraper = {
   platform: "bybit_p2p_ves",
   supportedAssets: ["USDT", "USDC", "BTC", "ETH"],

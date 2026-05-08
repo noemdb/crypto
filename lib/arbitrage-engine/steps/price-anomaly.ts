@@ -5,7 +5,8 @@ import { reject } from "../types";
  * Detecta anomalías en los precios de snapshots individuales.
  * Debe ejecutarse ANTES de la normalización de moneda.
  */
-export const detectPriceAnomalies: PipelineStep = (ctx: EvalContext) => {
+export function detectPriceAnomalies(ctx: EvalContext): EvalContext {
+  if (!("buySnapshot" in ctx.input)) return ctx;
   const { buySnapshot, sellSnapshot } = ctx.input;
 
   // 1. Validar Buy Snapshot
@@ -22,9 +23,9 @@ export const detectPriceAnomalies: PipelineStep = (ctx: EvalContext) => {
 function checkAnomaly(snapshot: any): string | null {
   const { price, baseCurrency, platform, metadata } = snapshot;
 
-  // Validación Cruzada: ARS no puede ser < 10 (probablemente es USD mal etiquetado o error de parsing)
-  if (baseCurrency === "ARS" && price < 10) {
-    return `SUSPICIOUS_ARS_PRICE: ${price} (too low for ARS)`;
+  // Validación Cruzada: VES no puede ser < 5 (probablemente es USD mal etiquetado o error de parsing)
+  if (baseCurrency === "VES" && price < 5) {
+    return `SUSPICIOUS_VES_PRICE: ${price} (too low for VES)`;
   }
 
   // Validación P2P vs Mediana de anuncios

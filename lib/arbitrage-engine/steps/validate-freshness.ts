@@ -4,6 +4,8 @@ import { reject, type EvalContext } from "../types";
 export const TTL_MS: Record<Platform, number> = {
   binance_spot: 30_000,
   bybit_spot: 30_000,
+  mexc_spot: 30_000,
+  okx_spot: 30_000,
   binance_p2p: 120_000,
   binance_p2p_ves: 120_000,
   binance_p2p_ars: 120_000,
@@ -14,6 +16,7 @@ export const TTL_MS: Record<Platform, number> = {
 };
 
 export function validateSnapshotFreshness(ctx: EvalContext): EvalContext {
+  if (!("buySnapshot" in ctx.input)) return ctx;
   const now = ctx.referenceTime;
   const buyAge = now - new Date(ctx.input.buySnapshot.scrapedAt).getTime();
   const sellAge = now - new Date(ctx.input.sellSnapshot.scrapedAt).getTime();

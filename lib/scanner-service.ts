@@ -33,8 +33,8 @@ export async function triggerFullScan() {
   const activeConfigs = [...SCRAPE_CONFIG];
   if (process.env.ENABLE_P2P_SCRAPING === "true") {
     activeConfigs.push({
-      platform: "binance_p2p",
-      assets: ["USDT", "USDC"],
+      platform: "binance_p2p_ves",
+      assets: ["USDT", "BTC", "ETH"],
     });
     // bybit_p2p se añadirá cuando esté estable
   }

@@ -66,8 +66,9 @@ export function classify(ctx: EvalContext): EvalContext {
 
 function finalizeClassification(
   ctx: EvalContext,
-  classification: import("@/lib/schemas").Classification
+  classification: import("@/lib/schemas").Classification,
 ): EvalContext {
+  const isTriangular = "snapshots" in ctx.input;
   const roiGross = ctx.output.roiGross ?? 0;
   const feesImpact = ctx.output.feesImpact ?? 0;
   const slippageImpact = ctx.output.slippageImpact ?? 0;
@@ -75,35 +76,55 @@ function finalizeClassification(
   const roiAdjusted = roiGross - feesImpact - slippageImpact - networkImpact;
   const fillProbability = ctx.output.fillProbability ?? 1.0;
   const liquidityRatio = ctx.output.liquidityRatio ?? 0;
-  const latencyRiskMs =
-    ctx.output.latencyRiskMs ??
-    Math.max(ctx.input.buySnapshot.latencyMs, ctx.input.sellSnapshot.latencyMs);
+
+  let latencyRiskMs = ctx.output.latencyRiskMs ?? 0;
+  if (latencyRiskMs === 0) {
+    if (isTriangular) {
+      latencyRiskMs = Math.max(
+        ...(ctx.input as any).snapshots.map((s: any) => s.latencyMs),
+      );
+    } else {
+      latencyRiskMs = Math.max(
+        (ctx.input as any).buySnapshot.latencyMs,
+        (ctx.input as any).sellSnapshot.latencyMs,
+      );
+    }
+  }
+
   const snapshotAge = ctx.output.snapshotAge ?? { buyMs: 0, sellMs: 0 };
+
+  const finalOutput: any = {
+    ...ctx.output,
+    id: ctx.output.id ?? createId(),
+    capitalAmount: ctx.input.capitalAmount,
+    roiGross,
+    feesImpact,
+    slippageImpact,
+    networkImpact,
+    roiAdjusted,
+    fillProbability,
+    liquidityRatio,
+    latencyRiskMs,
+    classification,
+    rejectionReasons: ctx.rejectionReasons,
+    evaluatedAt: new Date().toISOString(),
+    snapshotAge,
+  };
+
+  // Rellenar campos obligatorios si no están presentes (caso no triangular)
+  if (!isTriangular) {
+    const buy = (ctx.input as any).buySnapshot;
+    const sell = (ctx.input as any).sellSnapshot;
+    finalOutput.route = finalOutput.route ?? `${buy.platform}→${sell.platform}`;
+    finalOutput.buyPlatform = finalOutput.buyPlatform ?? buy.platform;
+    finalOutput.sellPlatform = finalOutput.sellPlatform ?? sell.platform;
+    finalOutput.asset = finalOutput.asset ?? buy.asset;
+    finalOutput.buyPrice = finalOutput.buyPrice ?? buy.price;
+    finalOutput.sellPrice = finalOutput.sellPrice ?? sell.price;
+  }
 
   return {
     ...ctx,
-    output: {
-      ...ctx.output,
-      id: createId(),
-      route: `${ctx.input.buySnapshot.platform}→${ctx.input.sellSnapshot.platform}`,
-      buyPlatform: ctx.input.buySnapshot.platform,
-      sellPlatform: ctx.input.sellSnapshot.platform,
-      asset: ctx.input.buySnapshot.asset,
-      buyPrice: ctx.input.buySnapshot.price,
-      sellPrice: ctx.input.sellSnapshot.price,
-      capitalAmount: ctx.input.capitalAmount,
-      roiGross,
-      feesImpact,
-      slippageImpact,
-      networkImpact,
-      roiAdjusted,
-      fillProbability,
-      liquidityRatio,
-      latencyRiskMs,
-      classification,
-      rejectionReasons: ctx.rejectionReasons,
-      evaluatedAt: new Date().toISOString(),
-      snapshotAge,
-    },
+    output: finalOutput,
   };
 }

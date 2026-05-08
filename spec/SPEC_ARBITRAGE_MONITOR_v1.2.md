@@ -1511,7 +1511,7 @@ NEXT_PUBLIC_APP_URL="https://yourapp.vercel.app"
 
 ### 18.1 Hardening del Motor de Evaluación
 Se ha implementado una capa de **Data Integrity Engineering** que resuelve los problemas de datos "basura" o irreales:
-- **Normalización de Monedas:** Conversión automática de ARS/VES a USD usando tasas de referencia (Dólar Cripto) calculadas en tiempo real.
+- **Normalización de Monedas:** Conversión automática de VES a USD usando tasas de referencia (Dólar Cripto) calculadas en tiempo real.
 - **Detección de Outliers:** Filtro de precios "gancho" o errores de scraping mediante comparación de desviación estándar.
 - **Clasificación Estricta:** El flag `rejected` ahora tiene prioridad absoluta sobre el ROI, asegurando que solo oportunidades técnicamente viables lleguen al Dashboard.
 - **ROI Sanity Cap:** Bloqueo automático de oportunidades con ROIs absurdos (> 100%) indicativos de errores de parsing.

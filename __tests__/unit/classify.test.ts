@@ -1,3 +1,4 @@
+import { describe, test, expect } from "vitest";
 import { classify } from "@/lib/arbitrage-engine/steps/classify";
 import { createContext, reject } from "@/lib/arbitrage-engine/types";
 

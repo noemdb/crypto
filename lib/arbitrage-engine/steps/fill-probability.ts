@@ -1,6 +1,7 @@
 import type { EvalContext } from "../types";
 
 export function scoreFillProbability(ctx: EvalContext): EvalContext {
+  if (!("buySnapshot" in ctx.input && "sellSnapshot" in ctx.input)) return ctx;
   const { sellSnapshot, capitalAmount } = ctx.input;
 
   // Spot exchanges: fill garantizado

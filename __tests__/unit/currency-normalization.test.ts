@@ -1,3 +1,4 @@
+import { describe, test, expect } from "vitest";
 import { calculateNormalizedPrice } from "@/lib/arbitrage-engine/steps/currency-normalization";
 
 describe("Currency Normalization Unit Tests", () => {

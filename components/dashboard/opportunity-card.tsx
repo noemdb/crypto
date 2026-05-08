@@ -66,9 +66,16 @@ export function OpportunityCard({
     >
       <CardHeader className="pb-2 flex flex-row items-start justify-between">
         <div>
-          <p className="font-mono text-sm font-semibold">
-            {opportunity.asset}: {opportunity.route}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="font-mono text-sm font-semibold">
+              {opportunity.asset}: {opportunity.route}
+            </p>
+            {opportunity.isTriangular && (
+              <span className="bg-blue-500/10 text-blue-500 text-[10px] px-1.5 py-0.5 rounded border border-blue-500/20 font-bold uppercase tracking-wider">
+                Triangular
+              </span>
+            )}
+          </div>
           <p
             className="text-xs text-muted-foreground mt-0.5"
             title={formattedTime}
@@ -101,7 +108,6 @@ export function OpportunityCard({
                 className="shrink-0 opacity-80"
                 fill="currentColor"
               >
-                {/* upward-trend mini-spark: right-angle triangle pointing up-right */}
                 <polyline
                   points="1,9 4,5 6,7 9,1"
                   fill="none"
@@ -124,6 +130,23 @@ export function OpportunityCard({
           </span>
         </div>
 
+        {/* Triangular Steps */}
+        {opportunity.isTriangular && opportunity.triangularSteps && (
+          <div className="text-[10px] space-y-1 bg-muted/40 p-2 rounded border border-border/50">
+            {opportunity.triangularSteps.map((step, i) => (
+              <div key={i} className="flex justify-between items-center">
+                <span className="text-muted-foreground">
+                  <span className={step.action === "BUY" ? "text-blue-500 font-semibold" : "text-orange-500 font-semibold"}>
+                    {step.action}
+                  </span>{" "}
+                  {step.pair}
+                </span>
+                <span className="font-mono text-foreground/80">${step.price.toFixed(4)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* ROI Breakdown */}
         <div className="text-xs text-muted-foreground space-y-0.5 border-t pt-2">
           <div className="flex justify-between">
@@ -138,10 +161,12 @@ export function OpportunityCard({
             <span>− Slippage</span>
             <span>{opportunity.slippageImpact.toFixed(3)}%</span>
           </div>
-          <div className="flex justify-between text-destructive/70">
-            <span>− Red</span>
-            <span>{opportunity.networkImpact.toFixed(3)}%</span>
-          </div>
+          {!opportunity.isTriangular && (
+            <div className="flex justify-between text-destructive/70">
+              <span>− Red</span>
+              <span>{opportunity.networkImpact.toFixed(3)}%</span>
+            </div>
+          )}
         </div>
 
         {/* Fill probability + prices */}
@@ -152,18 +177,22 @@ export function OpportunityCard({
               {(opportunity.fillProbability * 100).toFixed(0)}%
             </span>
           </div>
-          <div>
-            <span className="text-muted-foreground">Compra </span>
-            <span className="font-medium">
-              ${opportunity.buyPrice.toFixed(4)}
-            </span>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Venta </span>
-            <span className="font-medium">
-              ${opportunity.sellPrice.toFixed(4)}
-            </span>
-          </div>
+          {!opportunity.isTriangular && (
+            <>
+              <div>
+                <span className="text-muted-foreground">Compra </span>
+                <span className="font-medium">
+                  ${opportunity.buyPrice.toFixed(4)}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Venta </span>
+                <span className="font-medium">
+                  ${opportunity.sellPrice.toFixed(4)}
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Rejection reasons */}

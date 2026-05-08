@@ -7,12 +7,11 @@ import type { PipelineStep, EvalContext } from "../types";
 export function calculateNormalizedPrice(
   price: number,
   currency: string,
-  rates: { usdArs?: number; usdVes?: number }
+  rates: { usdVes?: number }
 ): number {
   if (currency === "USD") return price;
   
   let rate = 1.0;
-  if (currency === "ARS") rate = rates.usdArs || 1.0;
   if (currency === "VES") rate = rates.usdVes || 1.0;
 
   // Fallback de seguridad: Si la tasa es 0 o negativa, no normalizar para evitar división por cero
@@ -31,7 +30,8 @@ export function calculateNormalizedPrice(
 /**
  * Normaliza los precios a una moneda base común (USD) si es posible.
  */
-export const normalizeCurrency: PipelineStep = (ctx: EvalContext) => {
+export function normalizeCurrency(ctx: EvalContext): EvalContext {
+  if (!("buySnapshot" in ctx.input)) return ctx;
   const { buySnapshot, sellSnapshot } = ctx.input;
 
   // 1. Si ya son iguales, no hay nada que hacer
@@ -41,7 +41,6 @@ export const normalizeCurrency: PipelineStep = (ctx: EvalContext) => {
 
   // 2. Obtener tasas de referencia (Dólar Cripto)
   const rates = {
-    usdArs: (ctx.input as any).usdArsRate,
     usdVes: (ctx.input as any).usdVesRate,
   };
 

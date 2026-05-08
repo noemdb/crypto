@@ -1,8 +1,8 @@
-import type { OpportunityInput, OpportunityOutput } from "@/lib/schemas";
+import type { OpportunityInput, OpportunityOutput, TriangularOpportunityInput } from "@/lib/schemas";
 
 // Estado mutable que fluye por el pipeline
 export type EvalContext = {
-  input: OpportunityInput;
+  input: OpportunityInput | TriangularOpportunityInput;
   output: Partial<OpportunityOutput>;
   rejected: boolean;
   rejectionReasons: string[];
@@ -11,7 +11,7 @@ export type EvalContext = {
 
 export type PipelineStep = (ctx: EvalContext) => EvalContext;
 
-export function createContext(input: OpportunityInput): EvalContext {
+export function createContext(input: OpportunityInput | TriangularOpportunityInput): EvalContext {
   return {
     input,
     output: {},

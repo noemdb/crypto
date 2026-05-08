@@ -44,6 +44,9 @@ export function evaluateOpportunity(
   return parsed.data;
 }
 
+import { detectTriangularCycles } from "./detector";
+import { evaluateTriangularOpportunity } from "./triangular-pipeline";
+
 // Evaluar todos los pares posibles de un conjunto de snapshots
 export function evaluateAllPairs(
   snapshots: import("@/lib/schemas").MarketSnapshot[],
@@ -55,21 +58,19 @@ export function evaluateAllPairs(
   const results: OpportunityOutput[] = [];
 
   // 1. Calcular tasas de referencia en tiempo real (Dólar Cripto)
-  const arsP2P = snapshots.filter(s => s.platform.includes("p2p") && s.asset === "USDT" && s.baseCurrency === "ARS");
   const vesP2P = snapshots.filter(s => s.platform.includes("p2p") && s.asset === "USDT" && s.baseCurrency === "VES");
 
-  let usdArsRate = 1470; 
-  let usdVesRate = 36.5;
+  // Fallback histórico en caso de fallo de red en scrapers P2P
+  let usdVesRate = 39.5;
 
-  if (arsP2P.length > 0) {
-    usdArsRate = arsP2P.reduce((acc, s) => acc + s.price, 0) / arsP2P.length;
-    console.info(`[engine] Real-time USD/ARS rate: ${usdArsRate.toFixed(2)}`);
-  }
   if (vesP2P.length > 0) {
     usdVesRate = vesP2P.reduce((acc, s) => acc + s.price, 0) / vesP2P.length;
-    console.info(`[engine] Real-time USD/VES rate: ${usdVesRate.toFixed(2)}`);
+    console.info(`[engine] Real-time USD/VES rate: ${usdVesRate.toFixed(2)} (from ${vesP2P.length} ads)`);
+  } else {
+    console.warn(`[engine] No VES P2P ads found. Using fallback rate: ${usdVesRate}`);
   }
 
+  // 2. Evaluar Arbitraje Espacial (2 puntos)
   for (let i = 0; i < snapshots.length; i++) {
     for (let j = 0; j < snapshots.length; j++) {
       if (i === j) continue;
@@ -81,14 +82,13 @@ export function evaluateAllPairs(
 
       try {
         const output = evaluateOpportunity({
-          buySnapshot: buy,
-          sellSnapshot: sell,
+          buySnapshot: { ...buy, metadata: buy.metadata ? { ...buy.metadata } : undefined },
+          sellSnapshot: { ...sell, metadata: sell.metadata ? { ...sell.metadata } : undefined },
           capitalAmount,
           networkCostUSD,
           userConfig,
           referenceTime,
-          // Inyectamos las tasas calculadas
-          ...({ usdArsRate, usdVesRate } as any) 
+          ...({ usdVesRate } as any) 
         });
         results.push(output);
       } catch (err) {
@@ -98,6 +98,29 @@ export function evaluateAllPairs(
         );
       }
     }
+  }
+
+  // 3. Evaluar Arbitraje Triangular (3 nodos)
+  try {
+    const cycles = detectTriangularCycles(snapshots);
+    console.info(`[engine] Detected ${cycles.length} triangular cycles`);
+    
+    for (const cycle of cycles) {
+      try {
+        const output = evaluateTriangularOpportunity({
+          exchange: cycle.exchange,
+          snapshots: cycle.snapshots,
+          capitalAmount,
+          userConfig,
+          referenceTime,
+        });
+        results.push(output);
+      } catch (err) {
+        console.error(`[engine] triangular cycle error on ${cycle.exchange}:`, err);
+      }
+    }
+  } catch (err) {
+    console.error(`[engine] triangular detection error:`, err);
   }
 
   return results;
