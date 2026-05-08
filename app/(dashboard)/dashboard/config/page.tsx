@@ -13,12 +13,16 @@ export default async function ConfigPage() {
   const config = await getOrCreateDefaultUserConfig(session.user.id);
 
   // Sanitizar plataformas y assets para evitar errores de validación si hay valores obsoletos en la DB
-  const validPlatforms = config.enabledPlatforms.filter((p: any) => 
+  let validPlatforms = config.enabledPlatforms.filter((p: any) => 
     PlatformEnum.options.includes(p)
   );
-  const validAssets = config.monitoredAssets.filter((a: any) => 
+  let validAssets = config.monitoredAssets.filter((a: any) => 
     AssetEnum.options.includes(a)
   );
+
+  // Fallback si la sanitización dejó los arrays vacíos (datos antiguos incompatibles)
+  if (validPlatforms.length === 0) validPlatforms = ["binance_spot", "bybit_spot"];
+  if (validAssets.length === 0) validAssets = ["USDT"];
 
   // Convertir para el formulario (InitialConfig necesita ser serializable)
   const initialValues = {
