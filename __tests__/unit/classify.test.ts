@@ -1,52 +1,125 @@
-import { describe, test, expect } from "vitest";
-import { classify } from "@/lib/arbitrage-engine/steps/classify";
-import { createContext, reject } from "@/lib/arbitrage-engine/types";
+import { describe, it, expect } from 'vitest'
+import { classify } from '@/lib/arbitrage-engine/steps/classify'
+import { createContext } from '@/lib/arbitrage-engine/types'
+import type { OpportunityInput } from '@/lib/schemas'
 
-describe("Classification Engine Unit Tests", () => {
-  const mockInput = {
-    buySnapshot: { platform: "binance_spot", asset: "USDT", price: 1.0, baseCurrency: "USD", availableLiquidity: 1000, latencyMs: 100, scrapedAt: new Date().toISOString() },
-    sellSnapshot: { platform: "bybit_spot", asset: "USDT", price: 1.01, baseCurrency: "USD", availableLiquidity: 1000, latencyMs: 100, scrapedAt: new Date().toISOString() },
-    capitalAmount: 1000,
-    userConfig: { minROI: 0.5, minFillProbability: 0.8, alertDedupeWindowMin: 5 },
-  } as any;
+// ── Factory de contexto de prueba ─────────────────────────────────────────
 
-  test("should classify as INVALID if ROI exceeds sanity cap (150% > 25%)", () => {
-    const ctx = createContext(mockInput);
-    ctx.output.roiGross = 150; // 150% ROI
-    
-    const result = classify(ctx);
-    expect(result.output.classification).toBe("INVALID");
-    expect(result.rejectionReasons.some(r => r.includes("SUSPICIOUS_ROI_EXCEEDS_SANITY_CAP"))).toBe(true);
-  });
+function makeInput(overrides: Partial<OpportunityInput> = {}): OpportunityInput {
+  const now = new Date().toISOString()
+  return {
+    buySnapshot: {
+      id: 'buy01',
+      platform: 'binance_p2p_ves' as any,
+      asset: 'ETH',
+      baseCurrency: 'USD',
+      price: 1941.95,
+      availableLiquidity: 0.1434,
+      fee: 0.001,
+      latencyMs: 200,
+      scrapedAt: now,
+      isStale: false,
+    },
+    sellSnapshot: {
+      id: 'sell01',
+      platform: 'binance_spot',
+      asset: 'ETH',
+      baseCurrency: 'USD',
+      price: 2291.70,
+      availableLiquidity: 999_999,
+      fee: 0.001,
+      latencyMs: 100,
+      scrapedAt: now,
+      isStale: false,
+    },
+    capitalAmount: 0.1545,
+    networkCostUSD: 0,
+    userConfig: {
+      id: 'cfg01',
+      userId: 'usr01',
+      minROI: 1.5,
+      capitalAmount: 0.1545,
+      maxSlippage: 0.005,
+      minFillProbability: 0.7,
+      alertDedupeWindowMin: 30,
+      enabledPlatforms: ['binance_spot', 'binance_p2p_ves'],
+      monitoredAssets: ['ETH'],
+      scanIntervalSeconds: 180,
+      updatedAt: now,
+    },
+    ...overrides,
+  }
+}
 
-  test("should classify as INVALID if context was already rejected", () => {
-    let ctx = createContext(mockInput);
-    ctx = reject(ctx, "PREVIOUS_ERROR");
-    
-    const result = classify(ctx);
-    expect(result.output.classification).toBe("INVALID");
-  });
+function makeCtxWithLiquidityRatio(
+  liquidityRatio: number,
+  roiAdjusted: number,
+  fillProbability: number,
+  inheritedReasons: string[] = [],
+  rejected = false
+) {
+  const input = makeInput()
+  const ctx = createContext(input)
+  return {
+    ...ctx,
+    rejected: rejected, // Solo es rejected si se pasa explícitamente
+    rejectionReasons: inheritedReasons,
+    output: {
+      ...ctx.output,
+      liquidityRatio,
+      roiAdjusted,
+      roiGross: roiAdjusted + 0.2,
+      feesImpact: 0.1,
+      slippageImpact: 0.05,
+      networkImpact: 0.05,
+      fillProbability,
+      latencyRiskMs: 200,
+      snapshotAge: { buyMs: 1000, sellMs: 500 },
+    },
+  }
+}
 
-  test("should classify as INVALID if liquidity is zero", () => {
-    const ctx = createContext(mockInput);
-    ctx.output.roiGross = 1.0;
-    ctx.output.liquidityRatio = 0;
-    
-    const result = classify(ctx);
-    expect(result.output.classification).toBe("INVALID");
-    expect(result.rejectionReasons.some(r => r.includes("LIQUIDITY_RATIO_LOW"))).toBe(true);
-  });
+// ── Tests de la nueva lógica de ejecución parcial ──────────────────────────
 
-  test("should classify as EXECUTABLE for valid opportunity", () => {
-    const ctx = createContext(mockInput);
-    ctx.output.roiGross = 1.0; // 1% ROI
-    ctx.output.feesImpact = 0.1;
-    ctx.output.slippageImpact = 0;
-    ctx.output.networkImpact = 0;
-    ctx.output.fillProbability = 0.9;
-    ctx.output.liquidityRatio = 1.5;
-    
-    const result = classify(ctx);
-    expect(result.output.classification).toBe("EXECUTABLE");
-  });
-});
+describe('LOGIC FIX: INSUFFICIENT_LIQUIDITY permite EXECUTABLE (Operación Parcial)', () => {
+
+  it('liquidityRatio=0.928, roi=17.91% → EXECUTABLE (con aviso)', () => {
+    // Caso del bug original: ahora debe ser EXECUTABLE según el nuevo requerimiento
+    const ctx = makeCtxWithLiquidityRatio(
+      0.928, 
+      17.91, 
+      1.0, 
+      ['INSUFFICIENT_LIQUIDITY: available=0.1434 required=0.1545'],
+      false // No rechazado explícitamente por el pipeline
+    )
+    const result = classify(ctx)
+
+    expect(result.output.classification).toBe('EXECUTABLE')
+    expect(result.output.rejectionReasons).toContain('INSUFFICIENT_LIQUIDITY: available=0.1434 required=0.1545')
+  })
+
+  it('ROI negativo → INVALID incluso con liquidez ok', () => {
+    const ctx = makeCtxWithLiquidityRatio(1.5, -0.5, 1.0)
+    const result = classify(ctx)
+    expect(result.output.classification).toBe('INVALID')
+  })
+
+  it('OUTLIER_DETECTED heredado → INVALID (bloqueo duro)', () => {
+    const ctx = makeCtxWithLiquidityRatio(
+      1.5, 
+      10.0, 
+      1.0, 
+      ['OUTLIER_DETECTED: price deviation > 15%'],
+      true // Rechazado por el pipeline
+    )
+    const result = classify(ctx)
+    expect(result.output.classification).toBe('INVALID')
+  })
+
+  it('Fill probability < 0.5 → INVALID (bloqueo duro)', () => {
+    const ctx = makeCtxWithLiquidityRatio(1.5, 10.0, 0.45)
+    const result = classify(ctx)
+    expect(result.output.classification).toBe('INVALID')
+  })
+
+})

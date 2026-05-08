@@ -20,6 +20,7 @@ export async function getUserConfig(
     alertEmail: config.alertEmail ?? undefined,
     alertTelegram: config.alertTelegram ?? undefined,
     alertDedupeWindowMin: config.alertDedupeWindowMin,
+    scanIntervalSeconds: config.scanIntervalSeconds,
     enabledPlatforms: config.enabledPlatforms as UserConfig["enabledPlatforms"],
     monitoredAssets: config.monitoredAssets as UserConfig["monitoredAssets"],
     updatedAt: config.updatedAt.toISOString(),
@@ -37,6 +38,7 @@ export async function getOrCreateDefaultUserConfig(
       userId,
       enabledPlatforms: ["binance_spot", "bybit_spot"],
       monitoredAssets: ["USDT"],
+      scanIntervalSeconds: 180,
     },
   });
 
@@ -50,6 +52,7 @@ export async function getOrCreateDefaultUserConfig(
     alertEmail: created.alertEmail ?? undefined,
     alertTelegram: created.alertTelegram ?? undefined,
     alertDedupeWindowMin: created.alertDedupeWindowMin,
+    scanIntervalSeconds: created.scanIntervalSeconds,
     enabledPlatforms:
       created.enabledPlatforms as UserConfig["enabledPlatforms"],
     monitoredAssets: created.monitoredAssets as UserConfig["monitoredAssets"],

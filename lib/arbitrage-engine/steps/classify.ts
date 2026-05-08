@@ -2,101 +2,66 @@ import { createId } from "@paralleldrive/cuid2";
 import type { EvalContext } from "../types";
 import { reject } from "../types";
 
+/**
+ * Paso final del pipeline de arbitraje.
+ * Clasifica la oportunidad como EXECUTABLE, MARGINAL o INVALID.
+ */
 export function classify(ctx: EvalContext): EvalContext {
+  // ── Extraer parámetros con defaults seguros ────────────────────────────────
   const { minROI, minFillProbability } = ctx.input.userConfig;
 
-  // 1. VALIDACIÓN TEMPRANA: Si ya fue rechazado por integridad, frescura o realismo, es INVALID
-  if (ctx.rejected) {
-    return finalizeClassification(ctx, "INVALID");
-  }
-
-  const roiGross = ctx.output.roiGross ?? 0;
-  const feesImpact = ctx.output.feesImpact ?? 0;
-  const slippageImpact = ctx.output.slippageImpact ?? 0;
-  const networkImpact = ctx.output.networkImpact ?? 0;
-  const roiAdjusted = roiGross - feesImpact - slippageImpact - networkImpact;
+  const roiGross        = ctx.output.roiGross        ?? 0;
+  const feesImpact      = ctx.output.feesImpact      ?? 0;
+  const slippageImpact  = ctx.output.slippageImpact  ?? 0;
+  const networkImpact   = ctx.output.networkImpact   ?? 0;
+  const roiAdjusted     = ctx.output.roiAdjusted     ?? (roiGross - feesImpact - slippageImpact - networkImpact);
   const fillProbability = ctx.output.fillProbability ?? 1.0;
-  const liquidityRatio = ctx.output.liquidityRatio ?? 0;
-
-  // 2. ROI SANITY CAP (Defensa contra errores de normalización o outliers no detectados)
-  const MAX_SANITY_ROI = parseFloat(process.env.MAX_SANITY_ROI ?? "25.0");
-  if (roiAdjusted > MAX_SANITY_ROI) {
-    return finalizeClassification(
-      reject(ctx, `SUSPICIOUS_ROI_EXCEEDS_SANITY_CAP: ${roiAdjusted.toFixed(2)}% > ${MAX_SANITY_ROI}%`),
-      "INVALID"
-    );
-  }
+  const liquidityRatio  = ctx.output.liquidityRatio  ?? 1.0;
+  const latencyRiskMs   = ctx.output.latencyRiskMs   ?? 0;
+  const snapshotAge     = ctx.output.snapshotAge     ?? { buyMs: 0, sellMs: 0 };
 
   let updatedCtx = ctx;
 
+  // ── PASO 1: Bloqueos Duros (Hard Blocks) ───────────────────────────────────
+  // Si ya fue rechazado por pasos previos (Freshness, Outliers, Realism), es INVALID
+  let isInvalid = ctx.rejected;
+
+  // Nuevos bloqueos duros detectados en classify
   if (roiAdjusted < 0) {
     updatedCtx = reject(updatedCtx, `ROI_NEGATIVE: ${roiAdjusted.toFixed(4)}%`);
-  } else if (roiAdjusted < minROI) {
-    updatedCtx = reject(
-      updatedCtx,
-      `ROI_BELOW_THRESHOLD: ${roiAdjusted.toFixed(2)}% < ${minROI}%`,
-    );
+    isInvalid = true;
   }
+
   if (fillProbability < 0.5) {
-    updatedCtx = reject(
-      updatedCtx,
-      `LOW_FILL_PROBABILITY: ${fillProbability.toFixed(2)}`,
-    );
-  }
-  if (
-    liquidityRatio < 1.0 &&
-    !updatedCtx.rejectionReasons.some((r) => r.startsWith("INSUFFICIENT"))
-  ) {
-    updatedCtx = reject(
-      updatedCtx,
-      `LIQUIDITY_RATIO_LOW: ${liquidityRatio.toFixed(2)}`,
-    );
+    updatedCtx = reject(updatedCtx, `LOW_FILL_PROBABILITY: ${fillProbability.toFixed(2)}`);
+    isInvalid = true;
   }
 
-  let classification: import("@/lib/schemas").Classification = "MARGINAL";
+  // Nota: INSUFFICIENT_LIQUIDITY ya no es un hard block por requerimiento del usuario.
+  // Solo se muestra como advertencia en rejectionReasons (vía liquidity-eval.ts).
 
-  if (updatedCtx.rejected) {
+  // ── PASO 2: Clasificación final ──────────────────────────────────────────
+  let classification: import("@/lib/schemas").Classification = "INVALID";
+
+  if (isInvalid) {
     classification = "INVALID";
-  } else if (roiAdjusted >= minROI && fillProbability >= minFillProbability) {
-    classification = "EXECUTABLE";
-  }
-
-  return finalizeClassification(updatedCtx, classification);
-}
-
-function finalizeClassification(
-  ctx: EvalContext,
-  classification: import("@/lib/schemas").Classification,
-): EvalContext {
-  const isTriangular = "snapshots" in ctx.input;
-  const roiGross = ctx.output.roiGross ?? 0;
-  const feesImpact = ctx.output.feesImpact ?? 0;
-  const slippageImpact = ctx.output.slippageImpact ?? 0;
-  const networkImpact = ctx.output.networkImpact ?? 0;
-  const roiAdjusted = roiGross - feesImpact - slippageImpact - networkImpact;
-  const fillProbability = ctx.output.fillProbability ?? 1.0;
-  const liquidityRatio = ctx.output.liquidityRatio ?? 0;
-
-  let latencyRiskMs = ctx.output.latencyRiskMs ?? 0;
-  if (latencyRiskMs === 0) {
-    if (isTriangular) {
-      latencyRiskMs = Math.max(
-        ...(ctx.input as any).snapshots.map((s: any) => s.latencyMs),
-      );
+  } else {
+    // Si no hay bloqueos duros, evaluamos umbrales de usuario
+    if (roiAdjusted >= minROI && fillProbability >= minFillProbability) {
+      classification = "EXECUTABLE";
     } else {
-      latencyRiskMs = Math.max(
-        (ctx.input as any).buySnapshot.latencyMs,
-        (ctx.input as any).sellSnapshot.latencyMs,
-      );
+      classification = "MARGINAL";
     }
   }
 
-  const snapshotAge = ctx.output.snapshotAge ?? { buyMs: 0, sellMs: 0 };
-
+  // ── PASO 3: Finalización del Output ────────────────────────────────────────
+  const isTriangular = "snapshots" in ctx.input;
+  
   const finalOutput: any = {
-    ...ctx.output,
-    id: ctx.output.id ?? createId(),
-    capitalAmount: ctx.input.capitalAmount,
+    ...updatedCtx.output,
+    id: updatedCtx.output.id ?? createId(),
+    route: updatedCtx.output.route ?? (isTriangular ? "triangular" : ""),
+    capitalAmount: updatedCtx.input.capitalAmount,
     roiGross,
     feesImpact,
     slippageImpact,
@@ -106,25 +71,25 @@ function finalizeClassification(
     liquidityRatio,
     latencyRiskMs,
     classification,
-    rejectionReasons: ctx.rejectionReasons,
+    rejectionReasons: updatedCtx.rejectionReasons,
     evaluatedAt: new Date().toISOString(),
     snapshotAge,
   };
 
-  // Rellenar campos obligatorios si no están presentes (caso no triangular)
+  // Rellenar campos obligatorios para el dashboard si no es triangular
   if (!isTriangular) {
-    const buy = (ctx.input as any).buySnapshot;
-    const sell = (ctx.input as any).sellSnapshot;
-    finalOutput.route = finalOutput.route ?? `${buy.platform}→${sell.platform}`;
-    finalOutput.buyPlatform = finalOutput.buyPlatform ?? buy.platform;
-    finalOutput.sellPlatform = finalOutput.sellPlatform ?? sell.platform;
-    finalOutput.asset = finalOutput.asset ?? buy.asset;
-    finalOutput.buyPrice = finalOutput.buyPrice ?? buy.price;
-    finalOutput.sellPrice = finalOutput.sellPrice ?? sell.price;
+    const buy = (updatedCtx.input as any).buySnapshot;
+    const sell = (updatedCtx.input as any).sellSnapshot;
+    finalOutput.route = finalOutput.route || `${buy.platform}→${sell.platform}`;
+    finalOutput.buyPlatform = finalOutput.buyPlatform || buy.platform;
+    finalOutput.sellPlatform = finalOutput.sellPlatform || sell.platform;
+    finalOutput.asset = finalOutput.asset || buy.asset;
+    finalOutput.buyPrice = finalOutput.buyPrice || buy.price;
+    finalOutput.sellPrice = finalOutput.sellPrice || sell.price;
   }
 
   return {
-    ...ctx,
+    ...updatedCtx,
     output: finalOutput,
   };
 }

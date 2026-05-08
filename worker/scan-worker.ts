@@ -10,6 +10,7 @@ import { URL } from "node:url";
 (async () => {
 
   const { triggerFullScan } = await import("../lib/scanner-service");
+  const { prisma } = await import("../lib/db/prisma");
 
   const PORT = Number(process.env.PORT ?? process.env.SCAN_WORKER_PORT ?? 3333);
   const INTERVAL_SECONDS = Number(process.env.SCAN_WORKER_INTERVAL ?? 180);
@@ -117,6 +118,16 @@ import { URL } from "node:url";
   async function scheduleOnlineScan() {
     if (!state.onlineActive) {
       return;
+    }
+
+    // Fetch latest config before each cycle
+    try {
+      const config = await prisma.userConfig.findFirst();
+      if (config?.scanIntervalSeconds) {
+        state.intervalSeconds = config.scanIntervalSeconds;
+      }
+    } catch (error) {
+      console.warn("[worker] Failed to fetch latest config, using current interval:", error instanceof Error ? error.message : error);
     }
 
     // Clear nextRunAt while scan is running

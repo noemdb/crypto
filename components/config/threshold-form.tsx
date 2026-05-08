@@ -252,6 +252,36 @@ export function ThresholdForm({ initialConfig }: Props) {
                 </FormItem>
               )}
             />
+
+            {/* Scan Interval */}
+            <FormField
+              name="scanIntervalSeconds"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Intervalo de Escaneo</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        step="10"
+                        min="10"
+                        max="3600"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        className="pr-12"
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                        seg
+                      </span>
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    Tiempo de espera entre escaneos automáticos (Online).
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
         </section>
 

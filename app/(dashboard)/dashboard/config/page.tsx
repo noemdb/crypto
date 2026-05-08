@@ -33,6 +33,7 @@ export default async function ConfigPage() {
     alertEmail: config.alertEmail,
     alertTelegram: config.alertTelegram,
     alertDedupeWindowMin: config.alertDedupeWindowMin,
+    scanIntervalSeconds: config.scanIntervalSeconds,
     enabledPlatforms: validPlatforms,
     monitoredAssets: validAssets,
   };

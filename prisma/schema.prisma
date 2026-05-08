@@ -139,6 +139,7 @@ model UserConfig {
   alertDedupeWindowMin Int      @default(30)
   enabledPlatforms     String[]
   monitoredAssets      String[]
+  scanIntervalSeconds  Int      @default(180)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 }
