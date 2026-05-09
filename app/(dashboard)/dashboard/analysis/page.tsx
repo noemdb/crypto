@@ -1,5 +1,6 @@
 // app/(dashboard)/dashboard/analysis/page.tsx
 import { requireAuth } from '@/lib/auth-helpers'
+import { getUserConfig } from '@/lib/db/queries/user-config'
 import { getAnalysisKPIs } from '@/lib/actions/analysis.actions'
 import { AnalysisPanel } from '@/components/dashboard/analysis/analysis-panel'
 import { Brain } from 'lucide-react'
@@ -8,10 +9,12 @@ import { Brain } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 
 export default async function AnalysisPage() {
-  await requireAuth()
-
-  // Calcular KPIs iniciales en servidor (con las últimas 50 oportunidades)
-  const initialKPIs = await getAnalysisKPIs(50)
+  const session = await requireAuth()
+  const config = await getUserConfig(session.user.id)
+  const limit = config?.opportunitiesLimit ?? 50
+  
+  // Calcular KPIs iniciales en servidor (con las últimas oportunidades según config)
+  const initialKPIs = await getAnalysisKPIs(limit)
 
   return (
     <div className="space-y-6">

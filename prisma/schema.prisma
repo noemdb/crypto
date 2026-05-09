@@ -140,6 +140,7 @@ model UserConfig {
   enabledPlatforms     String[]
   monitoredAssets      String[]
   scanIntervalSeconds  Int      @default(180)
+  opportunitiesLimit   Int      @default(50)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 }

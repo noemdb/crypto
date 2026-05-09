@@ -12,6 +12,7 @@ export const UserConfigSchema = z.object({
   alertTelegram: z.string().optional(),
   alertDedupeWindowMin: z.number().int().positive().default(30),
   scanIntervalSeconds: z.number().int().min(10).max(3600).default(180),
+  opportunitiesLimit: z.number().int().min(1).max(200).default(50),
   enabledPlatforms: z.array(PlatformEnum).min(1),
   monitoredAssets: z.array(AssetEnum).min(1),
   updatedAt: z.string().datetime(),

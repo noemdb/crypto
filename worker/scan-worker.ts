@@ -13,8 +13,22 @@ import { URL } from "node:url";
   const { prisma } = await import("../lib/db/prisma");
 
   const PORT = Number(process.env.PORT ?? process.env.SCAN_WORKER_PORT ?? 3333);
-  const INTERVAL_SECONDS = Number(process.env.SCAN_WORKER_INTERVAL ?? 180);
+  const DEFAULT_INTERVAL = Number(process.env.SCAN_WORKER_INTERVAL ?? 180);
   const IP_CHECK_URL = process.env.SCAN_WORKER_IP_URL ?? "https://api.ipify.org?format=json";
+
+  // Initial fetch of config to set the interval
+  let initialInterval = DEFAULT_INTERVAL;
+  try {
+    const dbConfig = await prisma.userConfig.findFirst();
+    if (dbConfig?.scanIntervalSeconds) {
+      initialInterval = dbConfig.scanIntervalSeconds;
+      console.log(`[worker] Initialized with DB interval: ${initialInterval}s`);
+    } else {
+      console.log(`[worker] No DB config found, using default interval: ${initialInterval}s`);
+    }
+  } catch (error) {
+    console.warn("[worker] Failed to fetch initial config, using default:", initialInterval + "s");
+  }
 
   type WorkerMode = "idle" | "manual" | "online";
 
@@ -36,7 +50,7 @@ import { URL } from "node:url";
     lastMode: "idle",
     onlineActive: false,
     currentExecution: false,
-    intervalSeconds: INTERVAL_SECONDS,
+    intervalSeconds: initialInterval,
     lastRunAt: null,
     nextRunAt: null,
     lastStatus: null,
@@ -246,7 +260,7 @@ import { URL } from "node:url";
 
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`[worker] Scan worker listening on http://0.0.0.0:${PORT}`);
-    console.log(`[worker] Online interval: ${INTERVAL_SECONDS}s`);
+    console.log(`[worker] Online interval: ${state.intervalSeconds}s`);
   });
 
   process.on("SIGINT", async () => {

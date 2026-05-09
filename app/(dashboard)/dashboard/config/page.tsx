@@ -34,6 +34,7 @@ export default async function ConfigPage() {
     alertTelegram: config.alertTelegram,
     alertDedupeWindowMin: config.alertDedupeWindowMin,
     scanIntervalSeconds: config.scanIntervalSeconds,
+    opportunitiesLimit: config.opportunitiesLimit ?? 50,
     enabledPlatforms: validPlatforms,
     monitoredAssets: validAssets,
   };

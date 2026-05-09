@@ -154,7 +154,11 @@ export function ThresholdForm({ initialConfig }: Props) {
                         min="0"
                         max="100"
                         {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value === "" ? "" : parseFloat(e.target.value);
+                          field.onChange(val);
+                        }}
                         className="pr-8"
                       />
                       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
@@ -186,7 +190,11 @@ export function ThresholdForm({ initialConfig }: Props) {
                         step="100"
                         min="0"
                         {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value === "" ? "" : parseFloat(e.target.value);
+                          field.onChange(val);
+                        }}
                         className="pl-6"
                       />
                     </div>
@@ -212,7 +220,11 @@ export function ThresholdForm({ initialConfig }: Props) {
                       min="0"
                       max="1"
                       {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                      value={field.value ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value === "" ? "" : parseFloat(e.target.value);
+                        field.onChange(val);
+                      }}
                     />
                   </FormControl>
                   <FormDescription>
@@ -237,7 +249,11 @@ export function ThresholdForm({ initialConfig }: Props) {
                         min="0"
                         max="0.1"
                         {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value === "" ? "" : parseFloat(e.target.value);
+                          field.onChange(val);
+                        }}
                         className="pr-8"
                       />
                       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
@@ -267,7 +283,11 @@ export function ThresholdForm({ initialConfig }: Props) {
                         min="10"
                         max="3600"
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value === "" ? "" : parseInt(e.target.value);
+                          field.onChange(val);
+                        }}
                         className="pr-12"
                       />
                       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
@@ -277,6 +297,40 @@ export function ThresholdForm({ initialConfig }: Props) {
                   </FormControl>
                   <FormDescription>
                     Tiempo de espera entre escaneos automáticos (Online).
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Opportunities Limit */}
+            <FormField
+              name="opportunitiesLimit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Límite de Historial</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        step="5"
+                        min="1"
+                        max="200"
+                        {...field}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value === "" ? "" : parseInt(e.target.value);
+                          field.onChange(val);
+                        }}
+                        className="pr-12"
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                        ítems
+                      </span>
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    Cantidad de oportunidades a mostrar en el historial.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -364,7 +418,11 @@ export function ThresholdForm({ initialConfig }: Props) {
                         min="1"
                         max="1440"
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value === "" ? "" : parseInt(e.target.value);
+                          field.onChange(val);
+                        }}
                         className="pr-12"
                       />
                       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">

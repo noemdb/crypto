@@ -6,19 +6,43 @@ export async function insertOpportunity(data: Prisma.OpportunityCreateInput) {
 }
 
 export async function getOpportunities(opts: {
-  classification?: string
-  limit?: number
-  cursor?: string
-  since?: Date
+  classification?: string | undefined
+  asset?: string | undefined
+  minROI?: number | undefined
+  search?: string | undefined
+  limit?: number | undefined
+  cursor?: string | undefined
+  since?: Date | undefined
+  sortBy?: 'evaluatedAt' | 'roiAdjusted' | 'fillProbability' | undefined
+  sortOrder?: 'asc' | 'desc' | undefined
 }) {
-  const { classification, limit = 20, cursor, since } = opts
+  const { 
+    classification, 
+    asset, 
+    minROI, 
+    search, 
+    limit = 20, 
+    cursor, 
+    since,
+    sortBy = 'evaluatedAt',
+    sortOrder = 'desc'
+  } = opts
 
   return prisma.opportunity.findMany({
     where: {
       ...(classification && classification !== 'ALL' ? { classification } : {}),
+      ...(asset && asset !== 'ALL' ? { asset } : {}),
+      ...(minROI !== undefined ? { roiAdjusted: { gte: minROI } } : {}),
       ...(since ? { evaluatedAt: { gte: since } } : {}),
+      ...(search ? {
+        OR: [
+          { route: { contains: search, mode: 'insensitive' as Prisma.QueryMode } },
+          { buyPlatform: { contains: search, mode: 'insensitive' as Prisma.QueryMode } },
+          { sellPlatform: { contains: search, mode: 'insensitive' as Prisma.QueryMode } },
+        ]
+      } : {}),
     },
-    orderBy: { evaluatedAt: 'desc' },
+    orderBy: { [sortBy]: sortOrder },
     take: limit + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
   })
