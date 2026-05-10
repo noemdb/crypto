@@ -25,20 +25,37 @@ const CHART_CONFIG = {
   },
 };
 
-export function ROIChart({ data }: { data: DataPoint[] }) {
-  const chartData = data.map((d) => ({
-    time: new Date(d.evaluatedAt).toLocaleTimeString("es-VE", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-    roiAdjusted: parseFloat(d.roiAdjusted.toFixed(3)),
-    route: d.route,
-  }));
+export function ROIChart({ data, range = "7d" }: { data: DataPoint[], range?: string }) {
+  const isShortRange = range.endsWith("h") || range === "24h" || range === "12h";
+  
+  const chartData = data.map((d) => {
+    const date = new Date(d.evaluatedAt);
+    let timeLabel = "";
+    
+    if (isShortRange) {
+      timeLabel = date.toLocaleTimeString("es-VE", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } else {
+      timeLabel = date.toLocaleDateString("es-VE", {
+        day: "2-digit",
+        month: "2-digit",
+      });
+    }
+
+    return {
+      time: timeLabel,
+      roiAdjusted: parseFloat(d.roiAdjusted.toFixed(3)),
+      route: d.route,
+    };
+  });
 
   if (chartData.length === 0) {
+    const rangeLabel = range.replace("h", " horas").replace("d", " días").replace("m", " meses");
     return (
       <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">
-        Sin datos de ROI en los últimos 7 días
+        Sin datos de ROI en los últimos {rangeLabel}
       </div>
     );
   }

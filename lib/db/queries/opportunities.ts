@@ -48,11 +48,10 @@ export async function getOpportunities(opts: {
   })
 }
 
-export async function getOpportunityStats(opts: { days: number, minROI: number }) {
-  const since = new Date(Date.now() - opts.days * 24 * 60 * 60 * 1000)
+export async function getOpportunityStats(opts: { since: Date, minROI: number }) {
   return prisma.opportunity.findMany({
     where: { 
-      evaluatedAt: { gte: since }, 
+      evaluatedAt: { gte: opts.since }, 
       roiAdjusted: { gte: opts.minROI } 
     },
     select: {
@@ -64,8 +63,7 @@ export async function getOpportunityStats(opts: { days: number, minROI: number }
     orderBy: { evaluatedAt: "asc" },
   })
 }
-export async function getClassificationDistByPlatform(days: number) {
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+export async function getClassificationDistByPlatform(since: Date) {
 
   const rows = (await prisma.opportunity.groupBy({
     by: ["buyPlatform", "classification"],
