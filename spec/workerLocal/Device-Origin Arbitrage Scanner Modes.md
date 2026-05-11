@@ -9,7 +9,7 @@ Device-Origin Arbitrage Scanner Modes
 This feature adds two operating modes to the arbitrage monitor:
 
 1. **Ejecutar Escaner**: one-time manual scan.
-2. **Datos online**: continuous scan every 180 seconds.
+2. **Datos online**: continuous scan based on a dynamically configurable interval (defaults to 180 seconds).
 
 Both modes must execute from the **device executor** so that outbound requests to Binance and Bybit originate from the device’s public IP, not from Vercel cloud infrastructure.
 
@@ -22,8 +22,8 @@ Current production deployment on Vercel runs exchange requests from cloud/server
 ## Goals
 
 - Preserve the existing manual scan action.
-- Add a new online mode that runs scans every 180 seconds.
-- Ensure both modes use the device executor IP as the source of network traffic.
+- Add a new online mode that runs continuous scans based on a dynamically configurable interval from the database.
+- Ensure both modes use the device executor IP (or standalone worker IP) as the source of network traffic.
 - Keep Vercel as the dashboard only.
 - Provide clear runtime status, error reporting, and stop/start control.
 
@@ -37,7 +37,7 @@ Current production deployment on Vercel runs exchange requests from cloud/server
 ## User Stories
 
 - As a user, I want to click **Ejecutar Escaner** to run a scan once.
-- As a user, I want to click **Datos online** to start continuous scanning every 180 seconds.
+- As a user, I want to click **Datos online** to start continuous scanning based on my configured interval.
 - As a user, I want to stop online mode when I no longer need it.
 - As a user, I want to see whether the worker is running, when the last scan happened, and whether it failed.
 - As a user, I want exchange requests to come from my device IP, not cloud infrastructure.
@@ -55,7 +55,8 @@ Current production deployment on Vercel runs exchange requests from cloud/server
 
 - The system shall add a button labeled **Datos online**.
 - Clicking the button shall start a continuous scan loop.
-- The loop shall execute one scan every 180 seconds.
+- The loop shall execute one scan per the interval defined in the database (e.g. 180 seconds).
+- The loop shall fetch the latest interval configuration before each cycle to allow dynamic updates.
 - The loop shall continue until explicitly stopped.
 - Clicking the button again or using a stop action shall stop the loop.
 - The scans shall run from the device executor, not from Vercel.
@@ -88,8 +89,8 @@ Current production deployment on Vercel runs exchange requests from cloud/server
 ### Worker
 
 - Manual scan handler.
-- Online scan loop with 180-second interval.
-- Start/stop/status endpoints.
+- Online scan loop with dynamically fetched interval.
+- Start/stop/status/ip endpoints.
 - Logging of executions and failures.
 - Persistent or in-memory state.
 
@@ -106,6 +107,7 @@ The worker should support the following endpoints:
 - `POST /scan/online/start`
 - `POST /scan/online/stop`
 - `GET /scan/status`
+- `GET /scan/ip`
 
 ### Example Status Response
 
@@ -115,6 +117,7 @@ The worker should support the following endpoints:
   "running": true,
   "intervalSeconds": 180,
   "lastRunAt": "2026-05-05T18:00:00.000Z",
+  "nextRunAt": "2026-05-05T18:03:00.000Z",
   "lastStatus": "success",
   "lastError": null,
   "sourceIpMode": "device-executor"
@@ -139,8 +142,8 @@ The worker should support the following endpoints:
 ## Acceptance Criteria
 
 - Manual scan runs once from the device executor.
-- Online mode scans every 180 seconds from the device executor.
-- Both modes preserve the device’s public IP as the network origin.
+- Online mode scans based on a dynamically configurable interval from the device executor.
+- Both modes preserve the device’s public IP (or worker's IP) as the network origin.
 - Vercel never performs the exchange requests directly.
 - UI reflects runtime status accurately.
 - Online mode can be started and stopped reliably.
@@ -163,6 +166,6 @@ The worker should support the following endpoints:
 
 - Two buttons exist: **Ejecutar Escaner** and **Datos online**.
 - Manual mode works.
-- Online mode works every 180 seconds.
-- Worker execution originates from the device.
+- Online mode works and dynamically adjusts to the configured interval.
+- Worker execution originates from the device/standalone instance.
 - Status, errors, and last run time are visible in the UI.
