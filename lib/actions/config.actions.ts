@@ -42,6 +42,13 @@ export async function updateUserConfig(input: unknown): Promise<ActionResult> {
       enabledPlatforms: data.enabledPlatforms,
       monitoredAssets: data.monitoredAssets,
       updatedAt: new Date(),
+      // ── Monitor de Precio P2P ──────────────────────────────────────────
+      monitorEnabled:          data.monitorEnabled,
+      monitorPlatforms:        data.monitorPlatforms,
+      monitorAssets:           data.monitorAssets,
+      priceChangeThresholdPct: data.priceChangeThresholdPct,
+      priceAlertThresholdPct:  data.priceAlertThresholdPct,
+      priceAlertEnabled:       data.priceAlertEnabled,
     },
     create: {
       userId,
@@ -56,12 +63,20 @@ export async function updateUserConfig(input: unknown): Promise<ActionResult> {
       opportunitiesLimit: data.opportunitiesLimit ?? 50,
       enabledPlatforms: data.enabledPlatforms ?? ["binance_spot", "bybit_spot"],
       monitoredAssets: data.monitoredAssets ?? ["USDT"],
+      // ── Monitor de Precio P2P ──────────────────────────────────────────
+      monitorEnabled:          data.monitorEnabled ?? true,
+      monitorPlatforms:        data.monitorPlatforms ?? ["binance_p2p_ves"],
+      monitorAssets:           data.monitorAssets ?? ["USDT"],
+      priceChangeThresholdPct: data.priceChangeThresholdPct ?? 1.0,
+      priceAlertThresholdPct:  data.priceAlertThresholdPct ?? 2.0,
+      priceAlertEnabled:       data.priceAlertEnabled ?? true,
     },
   });
 
   revalidatePath("/dashboard/config");
   revalidatePath("/dashboard");
   return { success: true };
+
 }
 
 /**

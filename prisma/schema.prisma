@@ -143,4 +143,28 @@ model UserConfig {
   opportunitiesLimit   Int      @default(50)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+
+  // ── Monitor de Precio P2P ──────────────────────────────────────────────
+  monitorEnabled          Boolean  @default(true)
+  monitorPlatforms        String[] @default(["binance_p2p_ves"])
+  monitorAssets           String[] @default(["USDT"])
+  priceChangeThresholdPct Float    @default(1.0)
+  priceAlertThresholdPct  Float    @default(2.0)
+  priceAlertEnabled       Boolean  @default(true)
+}
+
+// ─── Monitor de Precio P2P ──────────────────────────────────────────────────
+
+model PriceRecord {
+  id           String   @id @default(cuid())
+  platform     String   // binance_p2p_ves | binance_spot | bybit_spot | bybit_p2p_ves
+  asset        String   // USDT | USDC | BTC | ETH
+  baseCurrency String   // ARS | VES | USD
+  priceMin     Float    // precio mínimo (bid del anuncio más barato en P2P, o bid spot)
+  priceMax     Float    // precio máximo (ask del anuncio más caro en P2P, o ask spot)
+  priceMid     Float    // precio medio (avg de top anuncios P2P, o mid spot)
+  recordedAt   DateTime @default(now())
+
+  @@index([platform, asset, recordedAt])
+  @@index([recordedAt])
 }

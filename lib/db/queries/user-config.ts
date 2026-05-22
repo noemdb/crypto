@@ -25,6 +25,13 @@ export async function getUserConfig(
     enabledPlatforms: config.enabledPlatforms as UserConfig["enabledPlatforms"],
     monitoredAssets: config.monitoredAssets as UserConfig["monitoredAssets"],
     updatedAt: config.updatedAt.toISOString(),
+    // ── Monitor de Precio P2P ──────────────────────────────────────────────
+    monitorEnabled:          config.monitorEnabled,
+    monitorPlatforms:        config.monitorPlatforms,
+    monitorAssets:           config.monitorAssets,
+    priceChangeThresholdPct: config.priceChangeThresholdPct,
+    priceAlertThresholdPct:  config.priceAlertThresholdPct,
+    priceAlertEnabled:       config.priceAlertEnabled,
   };
 }
 
@@ -41,6 +48,13 @@ export async function getOrCreateDefaultUserConfig(
       monitoredAssets: ["USDT"],
       scanIntervalSeconds: 180,
       opportunitiesLimit: 50,
+      // Monitor defaults
+      monitorEnabled:          true,
+      monitorPlatforms:        ["binance_p2p_ves"],
+      monitorAssets:           ["USDT"],
+      priceChangeThresholdPct: 1.0,
+      priceAlertThresholdPct:  2.0,
+      priceAlertEnabled:       true,
     },
   });
 
@@ -60,5 +74,12 @@ export async function getOrCreateDefaultUserConfig(
       created.enabledPlatforms as UserConfig["enabledPlatforms"],
     monitoredAssets: created.monitoredAssets as UserConfig["monitoredAssets"],
     updatedAt: created.updatedAt.toISOString(),
+    // ── Monitor de Precio P2P ──────────────────────────────────────────────
+    monitorEnabled:          created.monitorEnabled,
+    monitorPlatforms:        created.monitorPlatforms,
+    monitorAssets:           created.monitorAssets,
+    priceChangeThresholdPct: created.priceChangeThresholdPct,
+    priceAlertThresholdPct:  created.priceAlertThresholdPct,
+    priceAlertEnabled:       created.priceAlertEnabled,
   };
 }

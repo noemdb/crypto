@@ -16,6 +16,13 @@ export const UserConfigSchema = z.object({
   enabledPlatforms: z.array(PlatformEnum).min(1),
   monitoredAssets: z.array(AssetEnum).min(1),
   updatedAt: z.string().datetime(),
+  // ── Monitor de Precio P2P ────────────────────────────────────────────────
+  monitorEnabled:          z.boolean().default(true),
+  monitorPlatforms:        z.array(z.string()).min(1).default(['binance_p2p_ves']),
+  monitorAssets:           z.array(z.string()).min(1).default(['USDT']),
+  priceChangeThresholdPct: z.number().min(0.1).max(50).default(1.0),
+  priceAlertThresholdPct:  z.number().min(0.5).max(100).default(2.0),
+  priceAlertEnabled:       z.boolean().default(true),
 });
 
 export const UserConfigFormSchema = UserConfigSchema.omit({

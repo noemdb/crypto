@@ -37,7 +37,15 @@ export default async function ConfigPage() {
     opportunitiesLimit: config.opportunitiesLimit ?? 50,
     enabledPlatforms: validPlatforms,
     monitoredAssets: validAssets,
+    // ── Monitor de Precio P2P ──────────────────────────────────────────────
+    monitorEnabled:          config.monitorEnabled,
+    monitorPlatforms:        config.monitorPlatforms,
+    monitorAssets:           config.monitorAssets,
+    priceChangeThresholdPct: config.priceChangeThresholdPct,
+    priceAlertThresholdPct:  config.priceAlertThresholdPct,
+    priceAlertEnabled:       config.priceAlertEnabled,
   };
+
 
   return (
     <div className="max-w-4xl space-y-6">

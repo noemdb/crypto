@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3, Settings, Activity, Shield, ChevronLeft, ChevronRight, Brain } from "lucide-react";
+import { BarChart3, Settings, Activity, Shield, ChevronLeft, ChevronRight, Brain, LineChart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDashboardStore } from "@/lib/store/dashboard.store";
 import { Button } from "@/components/ui/button";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Monitor", icon: Activity },
+  { href: "/dashboard", label: "Arbitraje", icon: Activity },
+  { href: "/dashboard/monitor", label: "Monitor P2P", icon: LineChart },
   { href: "/dashboard/opportunities", label: "Historial", icon: BarChart3 },
   { href: "/dashboard/analysis", label: "Análisis IA", icon: Brain },
   { href: "/dashboard/config", label: "Configuración", icon: Settings },

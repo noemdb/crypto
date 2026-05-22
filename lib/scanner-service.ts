@@ -5,6 +5,8 @@ import { insertOpportunity } from "./db/queries/opportunities";
 import { dbSnapshotToSchema } from "./db/normalize";
 import { evaluateAllPairs } from "./arbitrage-engine/pipeline";
 import { sendTelegramAlert } from "./alerts/telegram";
+import { runPriceMonitor } from "./price-monitor/price-monitor-service";
+import { pruneOldPriceRecords } from "./db/queries/price-records";
 
 import { prisma } from "./db/prisma";
 import type { Platform, Asset } from "./schemas";
@@ -138,6 +140,29 @@ export async function triggerFullScan() {
   console.info(
     `[scanner-service] Full scan completed in ${durationMs}ms. Opportunities: ${opportunities.length}, Alerts: ${alertsSent}`,
   );
+
+  // 5. Price Monitor
+  try {
+    const priceResults = await runPriceMonitor(userConfig)
+    const recorded = priceResults.filter(r => r.recorded).length
+    const alerted  = priceResults.filter(r => r.alerted).length
+    console.info(`[scanner] price monitor: ${recorded} registros guardados, ${alerted} alertas enviadas`)
+  } catch (err) {
+    console.error('[scanner] price monitor error:', err)
+  }
+
+  // Pruning diario en memoria (se resetea con cada deploy — aceptable para uso continuo)
+  const PRUNE_INTERVAL_MS = 24 * 60 * 60 * 1000
+  const g = globalThis as any
+  if (!g._lastPriceRecordPrune || Date.now() - g._lastPriceRecordPrune > PRUNE_INTERVAL_MS) {
+    try {
+      const pruned = await pruneOldPriceRecords()
+      if (pruned > 0) console.info(`[scanner] price records pruned: ${pruned} registros eliminados (>90 días)`)
+      g._lastPriceRecordPrune = Date.now()
+    } catch (err) {
+      console.error('[scanner] pruning error:', err)
+    }
+  }
 
   return {
     success: true,

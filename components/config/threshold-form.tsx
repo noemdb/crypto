@@ -606,7 +606,115 @@ export function ThresholdForm({ initialConfig }: Props) {
           )}
         </section>
 
+        {/* ── Sección 5: Monitor de Precio P2P ────────────────────────── */}
+        <Separator />
+        <section className="space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Monitor de Precio P2P</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Umbrales para el registro y alerta de cambios de precio en tiempo real.
+            </p>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            {/* Umbral de cambio para registrar */}
+            <FormField
+              name="priceChangeThresholdPct"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Umbral de cambio para registrar (%)</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        max="50"
+                        {...field}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value === "" ? "" : parseFloat(e.target.value);
+                          field.onChange(val);
+                        }}
+                        className="pr-8"
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                        %
+                      </span>
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    Solo se guarda un nuevo punto de precio si el cambio supera este %. Default: 1%.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Umbral de alerta Telegram */}
+            <FormField
+              name="priceAlertThresholdPct"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Umbral de alerta Telegram (%)</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        step="0.5"
+                        min="0.5"
+                        max="100"
+                        {...field}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value === "" ? "" : parseFloat(e.target.value);
+                          field.onChange(val);
+                        }}
+                        className="pr-8"
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                        %
+                      </span>
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    Se envía alerta Telegram cuando el precio cambia más de este %. Default: 2%.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Alertas de precio activas */}
+          <FormField
+            name="priceAlertEnabled"
+            render={({ field }) => (
+              <FormItem className="flex items-center gap-3">
+                <FormControl>
+                  <input
+                    type="checkbox"
+                    id="priceAlertEnabled"
+                    checked={field.value}
+                    onChange={field.onChange}
+                    className="w-4 h-4 accent-primary"
+                  />
+                </FormControl>
+                <div>
+                  <FormLabel htmlFor="priceAlertEnabled" className="cursor-pointer">
+                    Alertas de precio activas
+                  </FormLabel>
+                  <FormDescription>
+                    Activa/desactiva las alertas Telegram de cambio de precio P2P.
+                  </FormDescription>
+                </div>
+              </FormItem>
+            )}
+          />
+        </section>
+
         {/* ── Footer: acciones ────────────────────────────────────────────── */}
+
         <div className="flex items-center justify-between gap-3 border-t pt-6">
           <p className="text-xs text-muted-foreground">
             {isDirty ? (
