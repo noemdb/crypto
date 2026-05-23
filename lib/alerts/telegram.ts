@@ -100,3 +100,49 @@ export async function sendPriceAlert(payload: PriceAlertPayload): Promise<void> 
   }
 }
 
+
+// ── Inteligencia Cambiaria ─────────────────────────────────────────────────────
+
+export type IntelAlertPayload = {
+  chatId: string
+  type: 'bcv_rate' | 'banking' | 'signal' | 'opportunity'
+  summary: string
+  score: number
+  metadata?: Record<string, unknown>
+}
+
+export async function sendIntelligenceAlert(payload: IntelAlertPayload): Promise<void> {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN
+  if (!botToken || !payload.chatId) return
+
+  const EMOJIS: Record<string, string> = {
+    bcv_rate:    '🏦',
+    banking:     '✅',
+    signal:      '📡',
+    opportunity: '⚡',
+  }
+
+  const emoji = EMOJIS[payload.type] ?? 'ℹ️'
+  const filled = Math.round(payload.score * 10)
+  const scoreBar = '█'.repeat(filled) + '░'.repeat(10 - filled)
+
+  const message = [
+    `${emoji} *AIM · Inteligencia Cambiaria*`,
+    ``,
+    `*Señal:* ${payload.summary}`,
+    `*Score:* \`${scoreBar}\` ${(payload.score * 100).toFixed(0)}%`,
+    ``,
+    `_${new Date().toLocaleString('es-VE', { timeZone: 'America/Caracas' })} VET_`,
+  ].join('\n')
+
+  try {
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: payload.chatId, text: message, parse_mode: 'Markdown' }),
+    })
+    console.info(`[telegram] intelligence alert sent type=${payload.type} score=${payload.score.toFixed(2)}`)
+  } catch (err) {
+    console.error('[telegram] intelligence alert failed:', err)
+  }
+}

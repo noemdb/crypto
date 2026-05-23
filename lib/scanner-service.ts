@@ -7,6 +7,9 @@ import { evaluateAllPairs } from "./arbitrage-engine/pipeline";
 import { sendTelegramAlert } from "./alerts/telegram";
 import { runPriceMonitor } from "./price-monitor/price-monitor-service";
 import { pruneOldPriceRecords } from "./db/queries/price-records";
+import { collectBCVRate, persistBCVRate } from "./intelligence/bcv-collector";
+import { collectBankingSignals, persistBankingSignals } from "./intelligence/banking-collector";
+import { sendIntelligenceAlert } from "./alerts/telegram";
 
 import { prisma } from "./db/prisma";
 import type { Platform, Asset } from "./schemas";
@@ -164,6 +167,14 @@ export async function triggerFullScan() {
     }
   }
 
+  // 6. Intelligence Collectors (BCV cada 4 ciclos, Banking cada 2 ciclos)
+  g._intelCycleCount = (g._intelCycleCount ?? 0) + 1
+  try {
+    await runIntelligenceCollectors(userConfig, g._intelCycleCount)
+  } catch (err) {
+    console.error('[scanner] intelligence collectors error:', err)
+  }
+
   return {
     success: true,
     scrapedCount,
@@ -171,4 +182,55 @@ export async function triggerFullScan() {
     alertsSent,
     durationMs,
   };
+}
+
+async function runIntelligenceCollectors(
+  config: Awaited<ReturnType<typeof getOrCreateDefaultUserConfig>>,
+  cycleCount: number,
+): Promise<void> {
+  if (!config.intelEnabled) return
+
+  // BCV: cada 4 ciclos (~12 min si ciclo = 3 min)
+  if (cycleCount % 4 === 0 || cycleCount === 1) {
+    const bcvData = await collectBCVRate()
+    if (bcvData) {
+      const { saved, changed, changePct } = await persistBCVRate(bcvData)
+      if (saved) {
+        console.info(`[scanner] intel bcv: tasa guardada ${bcvData.rateUsd.toFixed(2)} VES`)
+      }
+      if (changed && config.bcvAlertOnChange && config.alertTelegram) {
+        const threshold = config.bcvChangeThresholdPct ?? 0.5
+        if (changePct !== null && Math.abs(changePct) >= threshold) {
+          await sendIntelligenceAlert({
+            chatId: config.alertTelegram,
+            type: 'bcv_rate',
+            summary: `BCV: 1 USD = ${bcvData.rateUsd.toFixed(2)} VES (${changePct > 0 ? '+' : ''}${changePct.toFixed(2)}%)`,
+            score: 1.0,
+          })
+        }
+      }
+    }
+  }
+
+  // Banking: cada 2 ciclos (~6 min)
+  if (cycleCount % 2 === 0 || cycleCount === 1) {
+    const bankSignals = await collectBankingSignals()
+    if (bankSignals.length > 0) {
+      await persistBankingSignals(bankSignals)
+      console.info(`[scanner] intel banking: ${bankSignals.length} señal(es) detectada(s)`)
+
+      if (config.bankingAlertEnabled && config.alertTelegram) {
+        for (const signal of bankSignals) {
+          if (signal.score >= (config.intelAlertMinScore ?? 0.70)) {
+            await sendIntelligenceAlert({
+              chatId: config.alertTelegram,
+              type: 'banking',
+              summary: `${signal.bank.toUpperCase()} — ${signal.keywords[0]}`,
+              score: signal.score,
+            })
+          }
+        }
+      }
+    }
+  }
 }

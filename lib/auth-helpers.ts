@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import { prisma } from '@/lib/db/prisma'
 
 /**
  * Para RSC (pages y layouts) — redirige a /login si no hay sesión.
@@ -8,6 +9,13 @@ import { redirect } from 'next/navigation'
 export async function requireAuth() {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
+  
+  const userExists = await prisma.user.findUnique({ 
+    where: { id: session.user.id },
+    select: { id: true }
+  })
+  if (!userExists) redirect('/login')
+
   return session
 }
 

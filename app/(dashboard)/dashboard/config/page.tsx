@@ -44,6 +44,12 @@ export default async function ConfigPage() {
     priceChangeThresholdPct: config.priceChangeThresholdPct,
     priceAlertThresholdPct:  config.priceAlertThresholdPct,
     priceAlertEnabled:       config.priceAlertEnabled,
+    // ── Inteligencia Cambiaria ─────────────────────────────────────────────
+    intelEnabled:          config.intelEnabled,
+    bcvAlertOnChange:      config.bcvAlertOnChange,
+    bcvChangeThresholdPct: config.bcvChangeThresholdPct,
+    bankingAlertEnabled:   config.bankingAlertEnabled,
+    intelAlertMinScore:    config.intelAlertMinScore,
   };
 
 

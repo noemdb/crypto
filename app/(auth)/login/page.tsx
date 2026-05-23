@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { LoginForm } from '@/components/auth/login-form'
+import { prisma } from '@/lib/db/prisma'
 
 export default async function LoginPage({
   searchParams,
@@ -8,7 +9,15 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string; callbackUrl?: string }>
 }) {
   const session = await auth()
-  if (session) redirect('/dashboard')
+  if (session?.user?.id) {
+    const userExists = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true }
+    })
+    if (userExists) {
+      redirect('/dashboard')
+    }
+  }
 
   const { error, callbackUrl } = await searchParams
   const defaultCallbackUrl = callbackUrl ?? (process.env.NEXT_PUBLIC_APP_URL ? new URL('/dashboard', process.env.NEXT_PUBLIC_APP_URL).toString() : '/dashboard')

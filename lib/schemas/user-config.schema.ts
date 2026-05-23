@@ -23,6 +23,12 @@ export const UserConfigSchema = z.object({
   priceChangeThresholdPct: z.number().min(0.1).max(50).default(1.0),
   priceAlertThresholdPct:  z.number().min(0.5).max(100).default(2.0),
   priceAlertEnabled:       z.boolean().default(true),
+  // ── Inteligencia Cambiaria ───────────────────────────────────────────────
+  intelEnabled:          z.boolean().default(true),
+  bcvAlertOnChange:      z.boolean().default(true),
+  bcvChangeThresholdPct: z.number().min(0).max(100).default(0.5),
+  bankingAlertEnabled:   z.boolean().default(true),
+  intelAlertMinScore:    z.number().min(0).max(1).default(0.70),
 });
 
 export const UserConfigFormSchema = UserConfigSchema.omit({

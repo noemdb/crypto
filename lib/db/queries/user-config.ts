@@ -32,6 +32,12 @@ export async function getUserConfig(
     priceChangeThresholdPct: config.priceChangeThresholdPct,
     priceAlertThresholdPct:  config.priceAlertThresholdPct,
     priceAlertEnabled:       config.priceAlertEnabled,
+    // ── Inteligencia Cambiaria ─────────────────────────────────────────────
+    intelEnabled:          config.intelEnabled,
+    bcvAlertOnChange:      config.bcvAlertOnChange,
+    bcvChangeThresholdPct: config.bcvChangeThresholdPct,
+    bankingAlertEnabled:   config.bankingAlertEnabled,
+    intelAlertMinScore:    config.intelAlertMinScore,
   };
 }
 
@@ -50,11 +56,17 @@ export async function getOrCreateDefaultUserConfig(
       opportunitiesLimit: 50,
       // Monitor defaults
       monitorEnabled:          true,
-      monitorPlatforms:        ["binance_p2p_ves"],
-      monitorAssets:           ["USDT"],
+      monitorPlatforms:        ['binance_p2p_ves'],
+      monitorAssets:           ['USDT'],
       priceChangeThresholdPct: 1.0,
       priceAlertThresholdPct:  2.0,
       priceAlertEnabled:       true,
+      // Intelligence defaults
+      intelEnabled:          true,
+      bcvAlertOnChange:      true,
+      bcvChangeThresholdPct: 0.5,
+      bankingAlertEnabled:   true,
+      intelAlertMinScore:    0.70,
     },
   });
 
@@ -81,5 +93,11 @@ export async function getOrCreateDefaultUserConfig(
     priceChangeThresholdPct: created.priceChangeThresholdPct,
     priceAlertThresholdPct:  created.priceAlertThresholdPct,
     priceAlertEnabled:       created.priceAlertEnabled,
+    // ── Inteligencia Cambiaria ─────────────────────────────────────────────
+    intelEnabled:          created.intelEnabled,
+    bcvAlertOnChange:      created.bcvAlertOnChange,
+    bcvChangeThresholdPct: created.bcvChangeThresholdPct,
+    bankingAlertEnabled:   created.bankingAlertEnabled,
+    intelAlertMinScore:    created.intelAlertMinScore,
   };
 }

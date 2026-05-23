@@ -151,6 +151,13 @@ model UserConfig {
   priceChangeThresholdPct Float    @default(1.0)
   priceAlertThresholdPct  Float    @default(2.0)
   priceAlertEnabled       Boolean  @default(true)
+
+  // ── Inteligencia Cambiaria ─────────────────────────────────────────────
+  intelEnabled          Boolean @default(true)
+  bcvAlertOnChange      Boolean @default(true)
+  bcvChangeThresholdPct Float   @default(0.5)
+  bankingAlertEnabled   Boolean @default(true)
+  intelAlertMinScore    Float   @default(0.70)
 }
 
 // ─── Monitor de Precio P2P ──────────────────────────────────────────────────
@@ -167,4 +174,55 @@ model PriceRecord {
 
   @@index([platform, asset, recordedAt])
   @@index([recordedAt])
+}
+
+// ─── Inteligencia Cambiaria ──────────────────────────────────────────────────
+
+model BCVRate {
+  id          String   @id @default(cuid())
+  rateUsd     Float                          // tasa oficial USD/VES
+  rateEur     Float?                         // tasa oficial EUR/VES
+  date        String   @unique               // YYYY-MM-DD
+  changePct   Float?                         // vs. día anterior
+  publishedAt DateTime
+  collectedAt DateTime @default(now())
+  sourceUrl   String
+
+  @@index([date])
+  @@index([collectedAt])
+}
+
+model IntelSignal {
+  id          String    @id @default(cuid())
+  source      String                         // bcv | bancamiga | banca_negocios
+  sourceLayer String                         // official | banking | news
+  signalType  String                         // ver SignalType en types.ts
+  summary     String                         // texto legible
+  confidence  Float                          // 0.0 – 1.0
+  weight      Float                          // peso de la fuente
+  score       Float     @default(0)          // confidence × weight
+  metadata    Json?                          // datos crudos relevantes
+  detectedAt  DateTime  @default(now())
+  expiresAt   DateTime?                      // TTL de la señal
+  confirmedBy String[]  @default([])         // IDs de señales que confirman
+  alerted     Boolean   @default(false)      // ya se envió alerta Telegram
+
+  @@index([signalType, detectedAt])
+  @@index([score, detectedAt])
+  @@index([expiresAt])
+}
+
+model BankingWindow {
+  id         String    @id @default(cuid())
+  bank       String                          // bancamiga | banesco | bnc
+  windowType String                          // digital | auction | menudeo
+  isActive   Boolean   @default(true)
+  detectedAt DateTime  @default(now())
+  closedAt   DateTime?
+  keywords   String[]                        // keywords que activaron
+  sourceUrl  String
+  signalId   String?                         // referencia a IntelSignal
+
+  @@index([bank, isActive])
+  @@index([detectedAt])
 }
