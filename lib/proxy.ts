@@ -7,6 +7,7 @@ type ProxyRequestOptions = {
   retries?: number;
   retryDelayMs?: number;
   context: string;
+  responseType?: 'json' | 'text';
 };
 
 type ProxySuccess<T> = { ok: true; data: T; latencyMs: number };
@@ -74,7 +75,12 @@ export async function proxyRequest<T>(
         continue;
       }
 
-      const data = (await res.json()) as T;
+      let data: T;
+      if (opts.responseType === 'text') {
+        data = (await res.text()) as unknown as T;
+      } else {
+        data = (await res.json()) as T;
+      }
       console.info(
         `[proxy] ${opts.context} OK latency=${latencyMs}ms attempt=${attempt}`,
       );

@@ -44,6 +44,7 @@ export async function collectBankingSignals(): Promise<BankingSignalDetected[]> 
         context: `banking_${source.bank}`,
         timeoutMs: 10000,
         retries: 1,
+        responseType: 'text',
       })
 
       if (!result.ok) {

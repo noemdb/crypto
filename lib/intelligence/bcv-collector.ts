@@ -43,6 +43,7 @@ export async function collectBCVRate(): Promise<BCVRateData | null> {
     context: 'bcv_rate_scrape',
     timeoutMs: 12000,
     retries: 1,
+    responseType: 'text',
   })
 
   if (!scrapeResult.ok) {
