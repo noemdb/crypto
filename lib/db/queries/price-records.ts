@@ -9,7 +9,12 @@ export async function insertPriceRecord(data: {
   priceMax: number
   priceMid: number
 }) {
-  return prisma.priceRecord.create({ data })
+  return prisma.priceRecord.create({ 
+    data: {
+      ...data,
+      recordedAt: new Date(),
+    }
+  })
 }
 
 // Obtener el último registro de una plataforma/asset
