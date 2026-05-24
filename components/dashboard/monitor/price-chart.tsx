@@ -17,6 +17,7 @@ import { getPriceChartData } from '@/lib/actions/monitor.actions'
 import type { PriceChartData } from '@/lib/actions/monitor.actions'
 import type { TimeRangeKey } from '@/lib/price-monitor/constants'
 import { Loader2 } from 'lucide-react'
+import { useTimezone } from '@/lib/hooks/use-timezone'
 
 const CHART_CONFIG = {
   priceMin: { label: 'Precio Mínimo', color: 'var(--color-destructive)' },
@@ -24,15 +25,15 @@ const CHART_CONFIG = {
   priceMid: { label: 'Precio Medio',  color: 'var(--color-brand-primary)' },
 }
 
-function formatAxisTime(isoString: string, rangeKey: TimeRangeKey): string {
+function formatAxisTime(isoString: string, rangeKey: TimeRangeKey, tz: string): string {
   const d = new Date(isoString)
   if (rangeKey === '24h') {
-    return d.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })
+    return d.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', timeZone: tz })
   }
   if (rangeKey === '3d' || rangeKey === '7d') {
-    return d.toLocaleDateString('es-VE', { weekday: 'short', hour: '2-digit' })
+    return d.toLocaleDateString('es-VE', { weekday: 'short', hour: '2-digit', timeZone: tz })
   }
-  return d.toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })
+  return d.toLocaleDateString('es-VE', { day: '2-digit', month: 'short', timeZone: tz })
 }
 
 function formatPrice(value: number, currency: string): string {
@@ -52,6 +53,7 @@ export function PriceChart({ initialData, platform, asset }: Props) {
   const [data, setData] = useState<PriceChartData | null>(initialData)
   const [rangeKey, setRangeKey] = useState<TimeRangeKey>('24h')
   const [isPending, startTransition] = useTransition()
+  const { tz } = useTimezone()
 
   function handleRangeChange(newRange: TimeRangeKey) {
     setRangeKey(newRange)
@@ -66,7 +68,7 @@ export function PriceChart({ initialData, platform, asset }: Props) {
   const extremes = data?.extremes
 
   const chartData = points.map(p => ({
-    time: formatAxisTime(p.time, rangeKey),
+    time: formatAxisTime(p.time, rangeKey, tz),
     timeRaw: p.time,
     priceMin: p.priceMin,
     priceMax: p.priceMax,

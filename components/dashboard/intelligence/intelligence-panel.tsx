@@ -9,6 +9,7 @@ import { ContextPanel } from './context-panel'
 import { SpreadCorrelationChart } from './spread-correlation-chart'
 import { getSignalHistory } from '@/lib/actions/intelligence.actions'
 import { RefreshCw } from 'lucide-react'
+import { LogViewerDialog } from './log-viewer-dialog'
 import type { OpportunityContext, BCVRateData, IntelSignalData } from '@/lib/intelligence/types'
 
 type BankingWindowData = {
@@ -74,15 +75,18 @@ export function IntelligencePanel({ context, bcvHistory, bankingWindows }: Props
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium">Feed de Señales</CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleRefresh}
-                  disabled={isPending}
-                  className="h-7 px-2"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isPending ? 'animate-spin' : ''}`} />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <LogViewerDialog />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRefresh}
+                    disabled={isPending}
+                    className="h-7 px-2"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isPending ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>

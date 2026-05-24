@@ -4,7 +4,11 @@
 
 import { proxyRequest } from '@/lib/proxy'
 import { prisma } from '@/lib/db/prisma'
+import { exec } from 'child_process'
+import { promisify } from 'util'
 import type { BCVRateData } from './types'
+
+const execAsync = promisify(exec)
 
 const BCV_API_URL = 'https://bcv-api.rafnixg.dev/rates/'
 const BCV_FALLBACK_URL = 'https://www.bcv.org.ve'
@@ -44,21 +48,45 @@ export async function collectBCVRate(): Promise<BCVRateData | null> {
     timeoutMs: 12000,
     retries: 1,
     responseType: 'text',
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    }
   })
 
-  if (!scrapeResult.ok) {
-    console.error('[bcv-collector] Ambas estrategias fallaron:', scrapeResult.error)
-    return null
+  if (scrapeResult.ok) {
+    const data = parseBCVHtml(scrapeResult.data)
+    if (data) return data
   }
 
-  return parseBCVHtml(scrapeResult.data)
+  console.warn('[bcv-collector] Fetch falló, intentando cURL nativo (Estrategia 3)')
+
+  // Estrategia 3: cURL nativo (Evita problemas de TLS de Node.js con BCV)
+  try {
+    const { stdout } = await execAsync(
+      `curl -k -s -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" ${BCV_FALLBACK_URL}`,
+      { timeout: 15000 }
+    )
+    if (stdout) {
+      const data = parseBCVHtml(stdout)
+      if (data) {
+        console.info('[bcv-collector] cURL nativo exitoso')
+        return data
+      }
+    }
+  } catch (err) {
+    console.error('[bcv-collector] cURL nativo falló:', err instanceof Error ? err.message : err)
+  }
+
+  console.error('[bcv-collector] Todas las estrategias fallaron')
+  return null
 }
 
 function parseBCVHtml(html: string): BCVRateData | null {
   // El BCV publica la tasa en un elemento específico del HTML
   const patterns = [
-    /<strong>\s*([\d,]+(?:\.\d+)?)\s*<\/strong>/,
-    /id="dolar"[^>]*>[\s\S]*?<strong>([\d,]+)<\/strong>/,
+    /id="dolar"[^>]*>[\s\S]*?<strong[^>]*>\s*([\d,]+(?:\.\d+)?)\s*<\/strong>/i,
+    /<strong[^>]*>\s*([\d,]+(?:\.\d+)?)\s*<\/strong>/i,
     /Tipo de Cambio[^<]*<[^>]+>\s*([\d,]+)/i,
   ]
 

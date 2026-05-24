@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useTimezone } from "@/lib/hooks/use-timezone";
 
 const explicitWorkerBase = process.env.NEXT_PUBLIC_SCAN_WORKER_URL?.replace(/\/$/, "");
 const defaultWorkerBases = [
@@ -40,10 +41,10 @@ type WorkerStatus = {
   sourceIpMode: "device-executor";
 };
 
-function formatTimestamp(timestamp: string | null) {
+function formatTimestamp(timestamp: string | null, tz: string) {
   if (!timestamp) return "Nunca";
   try {
-    return new Date(timestamp).toLocaleString();
+    return new Date(timestamp).toLocaleString('es-VE', { timeZone: tz });
   } catch {
     return timestamp;
   }
@@ -179,6 +180,7 @@ export function ScannerButton() {
   const [status, setStatus] = React.useState<WorkerStatus | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [workerUrl, setWorkerUrl] = React.useState(`${WORKER_BASE}`);
+  const { tz } = useTimezone();
 
   const isWorkerOnline = status !== null;
   const isOnlineMode = status?.mode === "online";
@@ -373,7 +375,7 @@ export function ScannerButton() {
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>Última ejecución:</span>
-                <span>{formatTimestamp(status?.lastRunAt ?? null)}</span>
+                <span>{formatTimestamp(status?.lastRunAt ?? null, tz)}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>Origen:</span>

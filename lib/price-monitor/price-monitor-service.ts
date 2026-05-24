@@ -45,18 +45,31 @@ export async function runPriceMonitor(
         // 1. Obtener precio actual del scraper existente
         const { snapshot } = await scraper.scrape(asset as any)
 
-        const priceMin = snapshot.priceBid ?? snapshot.price
-        const priceMax = snapshot.priceAsk ?? snapshot.price
+        // Para el monitor histórico usamos el precio medio (mid-price).
+        // El priceBid/priceAsk en P2P refleja lados distintos del mercado
+        // (compra vs venta) y produce spreads artificiales de 25-30%.
+        // El mid-price es la referencia de mercado correcta.
         const priceMid = snapshot.price
+        const priceMin = priceMid
+        const priceMax = priceMid
 
         // 2. Comparar con último registro
         const last = await getLastPriceRecord(platform, asset)
 
-        const changeThreshold = config.priceChangeThresholdPct ?? 1.0
+        const changeThreshold = config.priceChangeThresholdPct ?? 0.1
         const alertThreshold = config.priceAlertThresholdPct ?? 2.0
+
+        // Guardado forzado si el último registro es muy antiguo (≥2× el intervalo de scan)
+        // Garantiza datos históricos continuos aunque el precio sea estable
+        const maxSilenceMs = ((config.scanIntervalSeconds ?? 180) * 2) * 1000
+        const lastAge = last
+          ? Date.now() - new Date(last.recordedAt).getTime()
+          : Infinity
+        const forceByAge = lastAge >= maxSilenceMs
 
         const shouldSave =
           !last ||
+          forceByAge ||
           shouldRecord(
             priceMin,
             priceMax,

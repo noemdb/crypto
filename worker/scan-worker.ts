@@ -57,7 +57,33 @@ import { URL } from "node:url";
     lastError: null,
     sourceIpMode: "device-executor",
     timer: null,
-    };
+  };
+
+  // ── Log Capture System ────────────────────────────────────────────────────────
+  type LogEntry = {
+    timestamp: string;
+    level: "info" | "warn" | "error";
+    message: string;
+  };
+  const MAX_LOGS = 200;
+  const logHistory: LogEntry[] = [];
+
+  function addLog(level: "info" | "warn" | "error", args: any[]) {
+    const timestamp = new Date().toISOString();
+    const message = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+    logHistory.push({ timestamp, level, message });
+    if (logHistory.length > MAX_LOGS) logHistory.shift();
+  }
+
+  const originalLog = console.log;
+  const originalInfo = console.info;
+  const originalWarn = console.warn;
+  const originalError = console.error;
+
+  console.log = (...args) => { addLog("info", args); originalLog(...args); };
+  console.info = (...args) => { addLog("info", args); originalInfo(...args); };
+  console.warn = (...args) => { addLog("warn", args); originalWarn(...args); };
+  console.error = (...args) => { addLog("error", args); originalError(...args); };
 
   function getResponseState() {
     const running = state.currentExecution;
@@ -178,14 +204,15 @@ import { URL } from "node:url";
     if (pathname === "/scan/status" && method === "GET") {
       sendJson(res, getResponseState());
       return;
-      }
+    }
+
+    if (pathname === "/scan/logs" && method === "GET") {
+      sendJson(res, { logs: logHistory });
+      return;
+    }
 
     if (pathname === "/scan/manual" && method === "POST") {
-      if (state.onlineActive) {
-        sendError(res, "Online mode is currently active. Stop online scans before running a manual scan.", 409);
-        return;
-      }
-
+      // Permitir escaneo manual si no hay uno en progreso (performScan ya lo valida)
       const result = await performScan(true);
       if (!result.success) {
         sendError(res, result.error ?? "Manual scan failed", 502);

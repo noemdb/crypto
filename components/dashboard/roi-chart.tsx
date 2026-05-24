@@ -11,6 +11,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { useTimezone } from "@/lib/hooks/use-timezone"
 
 type DataPoint = {
   evaluatedAt: string;
@@ -27,20 +28,23 @@ const CHART_CONFIG = {
 
 export function ROIChart({ data, range = "7d" }: { data: DataPoint[], range?: string }) {
   const isShortRange = range.endsWith("h") || range === "24h" || range === "12h";
-  
+  const { tz } = useTimezone()
+
   const chartData = data.map((d) => {
     const date = new Date(d.evaluatedAt);
     let timeLabel = "";
-    
+
     if (isShortRange) {
       timeLabel = date.toLocaleTimeString("es-VE", {
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: tz,
       });
     } else {
       timeLabel = date.toLocaleDateString("es-VE", {
         day: "2-digit",
         month: "2-digit",
+        timeZone: tz,
       });
     }
 
