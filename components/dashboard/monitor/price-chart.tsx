@@ -54,7 +54,12 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
   const [data, setData] = useState<PriceChartData | null>(initialData)
   const [rangeKey, setRangeKey] = useState<TimeRangeKey>('24h')
   const [isPending, startTransition] = useTransition()
-  const { tz } = useTimezone()
+  const { tz, formatTimeShort } = useTimezone()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Sincronizar datos reactivamente cuando cambia la plataforma, el activo, el rango de tiempo o la última ejecución del worker
   useEffect(() => {
@@ -85,7 +90,7 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
   const extremes = data?.extremes
 
   const chartData = points.map(p => ({
-    time: formatAxisTime(p.time, rangeKey, tz),
+    time: mounted ? formatAxisTime(p.time, rangeKey, tz) : '',
     timeRaw: p.time,
     priceMin: p.priceMin,
     priceMax: p.priceMax,
@@ -216,9 +221,14 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
         </ChartContainer>
       )}
 
-      <p className="text-[10px] text-muted-foreground text-right">
-        {extremes?.dataPoints ?? 0} puntos de datos · {data?.platform} · {data?.asset}
-      </p>
+      <div className="flex justify-between items-center mt-2 border-t pt-2">
+        <p className="text-[10px] text-muted-foreground">
+          Último escaneo: <span className="font-mono text-foreground">{mounted && lastRunAt ? formatTimeShort(lastRunAt) : 'Pendiente'}</span>
+        </p>
+        <p className="text-[10px] text-muted-foreground text-right">
+          {extremes?.dataPoints ?? 0} puntos de datos · {data?.platform} · {data?.asset}
+        </p>
+      </div>
     </div>
   )
 }
