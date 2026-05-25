@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import {
   AreaChart,
   Area,
@@ -47,13 +47,29 @@ type Props = {
   initialData: PriceChartData | null
   platform: string
   asset: string
+  lastRunAt?: string | null
 }
 
-export function PriceChart({ initialData, platform, asset }: Props) {
+export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
   const [data, setData] = useState<PriceChartData | null>(initialData)
   const [rangeKey, setRangeKey] = useState<TimeRangeKey>('24h')
   const [isPending, startTransition] = useTransition()
   const { tz } = useTimezone()
+
+  // Sincronizar datos reactivamente cuando cambia la plataforma, el activo, el rango de tiempo o la última ejecución del worker
+  useEffect(() => {
+    let active = true
+    async function loadData() {
+      const newData = await getPriceChartData(platform, asset, rangeKey)
+      if (active) {
+        setData(newData)
+      }
+    }
+    loadData()
+    return () => {
+      active = false
+    }
+  }, [platform, asset, rangeKey, lastRunAt])
 
   function handleRangeChange(newRange: TimeRangeKey) {
     setRangeKey(newRange)
