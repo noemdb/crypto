@@ -220,15 +220,29 @@ async function runIntelligenceCollectors(
       console.info(`[scanner] intel banking: ${bankSignals.length} señal(es) detectada(s)`)
 
       if (config.bankingAlertEnabled && config.alertTelegram) {
-        for (const signal of bankSignals) {
-          if (signal.score >= (config.intelAlertMinScore ?? 0.70)) {
-            await sendIntelligenceAlert({
-              chatId: config.alertTelegram,
-              type: 'banking',
-              summary: `${signal.bank.toUpperCase()} — ${signal.keywords[0]}`,
-              score: signal.score,
-            })
+        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+        
+        const unalertedSignals = await prisma.intelSignal.findMany({
+          where: {
+            sourceLayer: 'banking',
+            alerted: false,
+            score: { gte: 0.80 },
+            detectedAt: { gte: twoHoursAgo }
           }
+        });
+
+        for (const signal of unalertedSignals) {
+          await sendIntelligenceAlert({
+            chatId: config.alertTelegram,
+            type: 'banking',
+            summary: signal.summary,
+            score: signal.score,
+          });
+
+          await prisma.intelSignal.update({
+            where: { id: signal.id },
+            data: { alerted: true }
+          });
         }
       }
     }

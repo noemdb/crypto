@@ -134,12 +134,12 @@ import { URL } from "node:url";
 
     state.currentExecution = true;
     state.lastMode = manualTrigger ? "manual" : "online";
-    state.lastRunAt = new Date().toISOString();
     state.lastError = null;
     state.lastStatus = null;
 
     try {
       await triggerFullScan();
+      state.lastRunAt = new Date().toISOString();
       state.lastStatus = "success";
       return { success: true };
     } catch (error) {

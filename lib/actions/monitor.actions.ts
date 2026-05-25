@@ -33,6 +33,7 @@ export async function getPriceChartData(
   platform: string,
   asset: string,
   rangeKey: TimeRangeKey,
+  _cacheBuster?: string | null,
 ): Promise<PriceChartData | null> {
   const userId = await getAuthenticatedUserId()
   if (!userId) return null

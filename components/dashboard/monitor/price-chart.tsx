@@ -60,7 +60,8 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
   useEffect(() => {
     let active = true
     async function loadData() {
-      const newData = await getPriceChartData(platform, asset, rangeKey)
+      // Pasamos lastRunAt como cache buster para garantizar que Next.js no devuelva una respuesta cacheada de la Server Action
+      const newData = await getPriceChartData(platform, asset, rangeKey, lastRunAt)
       if (active) {
         setData(newData)
       }
@@ -189,7 +190,7 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
                 stroke="var(--color-success)"
                 strokeWidth={1.5}
                 fill="url(#gradMax)"
-                dot={false}
+                dot={chartData.length === 1}
               />
               <Area
                 type="monotone"
@@ -198,7 +199,7 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
                 stroke="var(--color-brand-primary)"
                 strokeWidth={1.5}
                 fill="none"
-                dot={false}
+                dot={chartData.length === 1}
                 strokeDasharray="4 2"
               />
               <Area
@@ -208,7 +209,7 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
                 stroke="var(--color-destructive)"
                 strokeWidth={1.5}
                 fill="url(#gradMin)"
-                dot={false}
+                dot={chartData.length === 1}
               />
             </AreaChart>
           </ResponsiveContainer>
