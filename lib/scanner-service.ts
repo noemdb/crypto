@@ -206,6 +206,7 @@ async function runIntelligenceCollectors(
             type: 'bcv_rate',
             summary: `BCV: 1 USD = ${bcvData.rateUsd.toFixed(2)} VES (${changePct > 0 ? '+' : ''}${changePct.toFixed(2)}%)`,
             score: 1.0,
+            confidence: 1.0, // Dato objetivo del BCV — certeza total
           })
         }
       }
@@ -226,7 +227,8 @@ async function runIntelligenceCollectors(
           where: {
             sourceLayer: 'banking',
             alerted: false,
-            score: { gte: 0.80 },
+            score: { gte: 0.80 },          // Impacto > 80%
+            confidence: { gte: 0.80 },     // Confianza > 80%
             detectedAt: { gte: twoHoursAgo }
           }
         });
@@ -237,6 +239,7 @@ async function runIntelligenceCollectors(
             type: 'banking',
             summary: signal.summary,
             score: signal.score,
+            confidence: signal.confidence,
           });
 
           await prisma.intelSignal.update({

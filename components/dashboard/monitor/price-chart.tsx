@@ -98,35 +98,35 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
   }))
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full min-w-0 overflow-hidden">
       {/* Header con stats extremos */}
       {extremes && (
-        <div className="grid grid-cols-3 gap-3 text-center">
-          <div className="rounded-lg border bg-red-500/5 border-red-500/20 p-3">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
-              Mínimo del período
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-3 text-center">
+          <div className="rounded-lg border bg-red-500/5 border-red-500/20 p-1.5 min-[400px]:p-2 sm:p-3 min-w-0 overflow-hidden">
+            <p className="text-[8px] min-[400px]:text-[10px] text-muted-foreground uppercase tracking-wide truncate">
+              Mínimo
             </p>
-            <p className="text-lg font-bold text-red-400 mt-0.5">
+            <p className="text-xs min-[400px]:text-sm sm:text-lg font-bold text-red-400 mt-0.5 truncate">
               {extremes.absoluteMin !== null
                 ? formatPrice(extremes.absoluteMin, currency)
                 : '—'}
             </p>
           </div>
-          <div className="rounded-lg border bg-muted/30 p-3">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+          <div className="rounded-lg border bg-muted/30 p-1.5 min-[400px]:p-2 sm:p-3 min-w-0 overflow-hidden">
+            <p className="text-[8px] min-[400px]:text-[10px] text-muted-foreground uppercase tracking-wide truncate">
               Promedio
             </p>
-            <p className="text-lg font-bold mt-0.5">
+            <p className="text-xs min-[400px]:text-sm sm:text-lg font-bold mt-0.5 truncate">
               {extremes.average !== null
                 ? formatPrice(extremes.average, currency)
                 : '—'}
             </p>
           </div>
-          <div className="rounded-lg border bg-green-500/5 border-green-500/20 p-3">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
-              Máximo del período
+          <div className="rounded-lg border bg-green-500/5 border-green-500/20 p-1.5 min-[400px]:p-2 sm:p-3 min-w-0 overflow-hidden">
+            <p className="text-[8px] min-[400px]:text-[10px] text-muted-foreground uppercase tracking-wide truncate">
+              Máximo
             </p>
-            <p className="text-lg font-bold text-green-500 mt-0.5">
+            <p className="text-xs min-[400px]:text-sm sm:text-lg font-bold text-green-500 mt-0.5 truncate">
               {extremes.absoluteMax !== null
                 ? formatPrice(extremes.absoluteMax, currency)
                 : '—'}
@@ -149,9 +149,9 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
           Sin datos en este período. Ejecuta un scan para comenzar a registrar precios.
         </div>
       ) : (
-        <ChartContainer config={CHART_CONFIG} className="h-56 w-full">
+        <ChartContainer config={CHART_CONFIG} className="h-40 sm:h-56 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
+            <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 4, left: 0 }}>
               <defs>
                 <linearGradient id="gradMin" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="var(--color-destructive)" stopOpacity={0.15} />
@@ -171,11 +171,11 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
                 interval="preserveStartEnd"
               />
               <YAxis
-                tick={{ fontSize: 10 }}
+                tick={{ fontSize: 9 }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v) => formatPrice(v as number, currency)}
-                width={currency === 'VES' ? 70 : 55}
+                width={currency === 'VES' ? 58 : 44}
               />
               <Tooltip
                 formatter={(value: any) => [formatPrice(value as number, currency), '']}
@@ -221,12 +221,12 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
         </ChartContainer>
       )}
 
-      <div className="flex justify-between items-center mt-2 border-t pt-2">
-        <p className="text-[10px] text-muted-foreground">
-          Último escaneo: <span className="font-mono text-foreground">{mounted && lastRunAt ? formatTimeShort(lastRunAt) : 'Pendiente'}</span>
+      <div className="flex flex-wrap justify-between items-center gap-1 mt-2 border-t pt-2 min-w-0 overflow-hidden">
+        <p className="text-[10px] text-muted-foreground whitespace-nowrap">
+          Último scan: <span className="font-mono text-foreground">{mounted && lastRunAt ? formatTimeShort(lastRunAt) : 'Pendiente'}</span>
         </p>
-        <p className="text-[10px] text-muted-foreground text-right">
-          {extremes?.dataPoints ?? 0} puntos de datos · {data?.platform} · {data?.asset}
+        <p className="text-[10px] text-muted-foreground truncate">
+          {extremes?.dataPoints ?? 0} pts · {data?.asset}
         </p>
       </div>
     </div>

@@ -107,7 +107,8 @@ export type IntelAlertPayload = {
   chatId: string
   type: 'bcv_rate' | 'banking' | 'signal' | 'opportunity'
   summary: string
-  score: number
+  score: number       // Impacto (confidence × weight)
+  confidence: number  // Confianza bruta 0.0–1.0
   metadata?: Record<string, unknown>
 }
 
@@ -123,16 +124,22 @@ export async function sendIntelligenceAlert(payload: IntelAlertPayload): Promise
   }
 
   const emoji = EMOJIS[payload.type] ?? 'ℹ️'
-  const filled = Math.round(payload.score * 10)
-  const scoreBar = '█'.repeat(filled) + '░'.repeat(10 - filled)
+
+  function bar(value: number): string {
+    const filled = Math.round(value * 10)
+    return '█'.repeat(filled) + '░'.repeat(10 - filled)
+  }
 
   const message = [
-    `${emoji} *AIM · Inteligencia Cambiaria*`,
+    `${emoji} *AIM · Ventana de Intervención Cambiaria*`,
     ``,
     `*Señal:* ${payload.summary}`,
-    `*Score:* \`${scoreBar}\` ${(payload.score * 100).toFixed(0)}%`,
+    ``,
+    `🎯 *Confianza:* \`${bar(payload.confidence)}\` ${(payload.confidence * 100).toFixed(0)}%`,
+    `⚡ *Impacto:*   \`${bar(payload.score)}\` ${(payload.score * 100).toFixed(0)}%`,
     ``,
     `_${new Date().toLocaleString('es-VE', { timeZone: 'America/Caracas' })} VET_`,
+    `[Ver Dashboard](${process.env.NEXT_PUBLIC_APP_URL}/dashboard/inteligencia)`,
   ].join('\n')
 
   try {

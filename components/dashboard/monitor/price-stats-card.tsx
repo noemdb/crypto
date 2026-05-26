@@ -46,13 +46,13 @@ export function PriceStatsCard({ summary }: { summary: MonitorSummary }) {
     : null
 
   return (
-    <Card className="hover:shadow-sm transition-shadow">
-      <CardContent className="p-4 space-y-3">
+    <Card className="hover:shadow-sm transition-shadow min-w-0 overflow-hidden">
+      <CardContent className="p-2 sm:p-4 space-y-2 sm:space-y-3">
         {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="font-mono font-semibold text-sm">{summary.asset}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
+        <div className="flex items-start justify-between gap-1 min-w-0">
+          <div className="min-w-0 overflow-hidden">
+            <p className="font-mono font-semibold text-xs sm:text-sm truncate">{summary.asset}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 truncate">
               {PLATFORM_LABELS[summary.platform] ?? summary.platform}
             </p>
           </div>
@@ -60,16 +60,16 @@ export function PriceStatsCard({ summary }: { summary: MonitorSummary }) {
         </div>
 
         {/* Min/Max */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-md bg-red-500/5 border border-red-500/15 p-2">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Mínimo</p>
-            <p className="text-sm font-bold text-red-400">
+        <div className="grid grid-cols-2 gap-1 sm:gap-2">
+          <div className="rounded-md bg-red-500/5 border border-red-500/15 p-1.5 sm:p-2 min-w-0 overflow-hidden">
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Mínimo</p>
+            <p className="text-xs sm:text-sm font-bold text-red-400 truncate">
               {formatPrice(summary.currentMin, summary.baseCurrency)}
             </p>
           </div>
-          <div className="rounded-md bg-green-500/5 border border-green-500/15 p-2">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Máximo</p>
-            <p className="text-sm font-bold text-green-500">
+          <div className="rounded-md bg-green-500/5 border border-green-500/15 p-1.5 sm:p-2 min-w-0 overflow-hidden">
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Máximo</p>
+            <p className="text-xs sm:text-sm font-bold text-green-500 truncate">
               {formatPrice(summary.currentMax, summary.baseCurrency)}
             </p>
           </div>
@@ -77,8 +77,8 @@ export function PriceStatsCard({ summary }: { summary: MonitorSummary }) {
 
         {/* Age */}
         {age !== null && (
-          <p className="text-[10px] text-muted-foreground text-right">
-            Actualizado hace {age < 60 ? `${age}min` : `${Math.round(age / 60)}h`}
+          <p className="text-[9px] sm:text-[10px] text-muted-foreground text-right">
+            Hace {age < 60 ? `${age}min` : `${Math.round(age / 60)}h`}
           </p>
         )}
       </CardContent>

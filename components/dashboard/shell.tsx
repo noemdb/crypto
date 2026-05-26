@@ -18,9 +18,9 @@ export function DashboardShell({
   return (
     <div className="flex min-h-screen bg-muted/30">
       <DashboardSidebar />
-      <div className="flex flex-1 flex-col transition-all duration-300">
+      <div className="flex flex-1 flex-col min-w-0 overflow-x-hidden transition-all duration-300">
         <DashboardHeader user={user} />
-        <main className="flex-1 p-4 lg:p-6">{children}</main>
+        <main className="flex-1 p-4 lg:p-6 overflow-x-hidden">{children}</main>
       </div>
     </div>
   );

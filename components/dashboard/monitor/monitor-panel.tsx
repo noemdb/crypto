@@ -106,7 +106,7 @@ export function MonitorPanel({
       </div>
 
       {/* 2. Tarjetas de Resumen (Mínimo / Máximo) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 min-w-0">
         {activeStats.map((stat) => (
           <PriceStatsCard key={stat.asset} summary={stat} />
         ))}
@@ -118,16 +118,16 @@ export function MonitorPanel({
       </div>
 
       {/* 3. Gráfico Histórico */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center justify-between">
+      <Card className="min-w-0 overflow-hidden">
+        <CardHeader className="pb-2 sm:pb-4">
+          <CardTitle className="text-sm sm:text-base flex items-center justify-between">
             <span>Histórico de Precio</span>
             <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
               {initialAsset}
             </span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="w-full min-w-0 overflow-hidden p-2 sm:p-6">
           <PriceChart
             initialData={initialChartData}
             platform={platform}
