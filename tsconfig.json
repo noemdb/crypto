@@ -43,6 +43,7 @@
   ],
   "exclude": [
     "node_modules",
-    "playwright-worker"
+    "playwright-worker",
+    "test-db-ws.ts"
   ]
 }
