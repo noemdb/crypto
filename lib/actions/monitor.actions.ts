@@ -19,7 +19,9 @@ export type PriceChartData = {
   }>
   extremes: {
     absoluteMin: number | null
+    absoluteMinTime: string | null
     absoluteMax: number | null
+    absoluteMaxTime: string | null
     average: number | null
     dataPoints: number
   }
@@ -60,7 +62,14 @@ export async function getPriceChartData(
       priceMax: r.priceMax,
       priceMid: r.priceMid,
     })),
-    extremes,
+    extremes: {
+      absoluteMin: extremes.absoluteMin,
+      absoluteMinTime: extremes.absoluteMinTime?.toISOString() ?? null,
+      absoluteMax: extremes.absoluteMax,
+      absoluteMaxTime: extremes.absoluteMaxTime?.toISOString() ?? null,
+      average: extremes.average,
+      dataPoints: extremes.dataPoints,
+    },
     platform,
     asset,
     baseCurrency: baseCurrencyRecord?.baseCurrency ?? 'USD',
@@ -156,4 +165,68 @@ export async function updateMonitorConfig(
   })
 
   return { success: true }
+}
+
+// ── getPaginatedPriceHistory ──────────────────────────────────────────────────
+
+export type PaginatedPriceHistoryResult = {
+  data: Array<{
+    id: string
+    time: string
+    priceMin: number
+    priceMax: number
+    priceMid: number
+  }>
+  total: number
+  totalPages: number
+}
+
+export async function getPaginatedPriceHistory(
+  platform: string,
+  asset: string,
+  rangeKey: TimeRangeKey | 'all',
+  page: number = 1,
+  pageSize: number = 20,
+  sortBy: 'recordedAt' | 'priceMin' | 'priceMax' | 'priceMid' = 'recordedAt',
+  sortOrder: 'asc' | 'desc' = 'desc'
+): Promise<PaginatedPriceHistoryResult | null> {
+  const userId = await getAuthenticatedUserId()
+  if (!userId) return null
+
+  const where: any = { platform, asset }
+
+  if (rangeKey !== 'all') {
+    const hours = TIME_RANGES[rangeKey].hours
+    const since = new Date(Date.now() - hours * 60 * 60 * 1000)
+    where.recordedAt = { gte: since }
+  }
+
+  const [total, records] = await Promise.all([
+    prisma.priceRecord.count({ where }),
+    prisma.priceRecord.findMany({
+      where,
+      orderBy: { [sortBy]: sortOrder },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: {
+        id: true,
+        recordedAt: true,
+        priceMin: true,
+        priceMax: true,
+        priceMid: true,
+      },
+    }),
+  ])
+
+  return {
+    data: records.map(r => ({
+      id: r.id,
+      time: r.recordedAt.toISOString(),
+      priceMin: r.priceMin,
+      priceMax: r.priceMax,
+      priceMid: r.priceMid,
+    })),
+    total,
+    totalPages: Math.ceil(total / pageSize),
+  }
 }

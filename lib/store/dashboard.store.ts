@@ -76,6 +76,7 @@ export const useDashboardStore = create<DashboardStore>()(
       partialize: (s) => ({
         activeClassification: s.activeClassification,
         displayTimezone: s.displayTimezone,
+        isSidebarCollapsed: s.isSidebarCollapsed,
       }),
     },
   ),

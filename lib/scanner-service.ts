@@ -99,7 +99,7 @@ export async function triggerFullScan() {
   );
 
   // 3. Persist
-  const evaluationTime = new Date();
+  const evaluationTime = new Date().toISOString();
   const persistPromises = opportunities.map((opp) =>
     insertOpportunity({
       route: opp.route,

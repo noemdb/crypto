@@ -1,4 +1,8 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
+import { useTimezone } from '@/lib/hooks/use-timezone'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import type { MonitorSummary } from '@/lib/actions/monitor.actions'
 
@@ -41,6 +45,13 @@ const PLATFORM_LABELS: Record<string, string> = {
 }
 
 export function PriceStatsCard({ summary }: { summary: MonitorSummary }) {
+  const [mounted, setMounted] = useState(false)
+  const { formatDateTime } = useTimezone()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const age = summary.lastRecordedAt
     ? Math.round((Date.now() - new Date(summary.lastRecordedAt).getTime()) / 60_000)
     : null
@@ -66,12 +77,22 @@ export function PriceStatsCard({ summary }: { summary: MonitorSummary }) {
             <p className="text-xs sm:text-sm font-bold text-red-400 truncate">
               {formatPrice(summary.currentMin, summary.baseCurrency)}
             </p>
+            {summary.lastRecordedAt && (
+              <p className="text-[9px] text-muted-foreground mt-0.5 truncate">
+                {mounted ? formatDateTime(summary.lastRecordedAt) : ''}
+              </p>
+            )}
           </div>
           <div className="rounded-md bg-green-500/5 border border-green-500/15 p-1.5 sm:p-2 min-w-0 overflow-hidden">
             <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Máximo</p>
             <p className="text-xs sm:text-sm font-bold text-green-500 truncate">
               {formatPrice(summary.currentMax, summary.baseCurrency)}
             </p>
+            {summary.lastRecordedAt && (
+              <p className="text-[9px] text-muted-foreground mt-0.5 truncate">
+                {mounted ? formatDateTime(summary.lastRecordedAt) : ''}
+              </p>
+            )}
           </div>
         </div>
 

@@ -12,7 +12,7 @@ export async function insertPriceRecord(data: {
   return prisma.priceRecord.create({ 
     data: {
       ...data,
-      recordedAt: new Date(),
+      recordedAt: new Date().toISOString(),
     }
   })
 }
@@ -57,23 +57,37 @@ export async function getPriceExtremes(opts: {
   asset: string
   since: Date
 }) {
-  const result = await prisma.priceRecord.aggregate({
-    where: {
-      platform: opts.platform,
-      asset: opts.asset,
-      recordedAt: { gte: opts.since },
-    },
-    _min: { priceMin: true, recordedAt: true },
-    _max: { priceMax: true, recordedAt: true },
-    _avg: { priceMid: true },
-    _count: { id: true },
-  })
+  const where = {
+    platform: opts.platform,
+    asset: opts.asset,
+    recordedAt: { gte: opts.since },
+  }
+
+  const [minRow, maxRow, agg] = await Promise.all([
+    prisma.priceRecord.findFirst({
+      where,
+      orderBy: { priceMin: 'asc' },
+      select: { priceMin: true, recordedAt: true },
+    }),
+    prisma.priceRecord.findFirst({
+      where,
+      orderBy: { priceMax: 'desc' },
+      select: { priceMax: true, recordedAt: true },
+    }),
+    prisma.priceRecord.aggregate({
+      where,
+      _avg: { priceMid: true },
+      _count: { id: true },
+    }),
+  ])
 
   return {
-    absoluteMin: result._min.priceMin,
-    absoluteMax: result._max.priceMax,
-    average: result._avg.priceMid,
-    dataPoints: result._count.id,
+    absoluteMin: minRow?.priceMin ?? null,
+    absoluteMinTime: minRow?.recordedAt ?? null,
+    absoluteMax: maxRow?.priceMax ?? null,
+    absoluteMaxTime: maxRow?.recordedAt ?? null,
+    average: agg._avg.priceMid,
+    dataPoints: agg._count.id,
   }
 }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { BarChart3, Settings, Activity, Shield, ChevronLeft, ChevronRight, Brain, LineChart, Radar } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,17 +18,24 @@ const NAV_ITEMS = [
 
 export function DashboardSidebar() {
   const { isSidebarCollapsed, toggleSidebar } = useDashboardStore();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const collapsed = mounted ? isSidebarCollapsed : false;
 
   return (
     <aside
       className={cn(
         "hidden lg:flex flex-col border-r bg-card transition-all duration-300 relative",
-        isSidebarCollapsed ? "w-20" : "w-64"
+        collapsed ? "w-20" : "w-64"
       )}
     >
       <div className="flex items-center gap-3 px-6 py-6 border-b h-16">
         <Shield className="w-6 h-6 text-brand-primary shrink-0" />
-        {!isSidebarCollapsed && (
+        {!collapsed && (
           <span className="font-bold text-lg tracking-tight truncate">AIM</span>
         )}
       </div>
@@ -37,22 +45,22 @@ export function DashboardSidebar() {
           <Link
             key={item.href}
             href={item.href}
-            title={isSidebarCollapsed ? item.label : undefined}
+            title={collapsed ? item.label : undefined}
             className={cn(
               "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium",
               "text-muted-foreground hover:text-foreground hover:bg-accent",
               "transition-all",
-              isSidebarCollapsed && "justify-center px-0"
+              collapsed && "justify-center px-0"
             )}
           >
             <item.icon className="w-5 h-5 shrink-0" />
-            {!isSidebarCollapsed && <span>{item.label}</span>}
+            {!collapsed && <span>{item.label}</span>}
           </Link>
         ))}
       </nav>
 
       <div className="p-4 border-t">
-        {!isSidebarCollapsed ? (
+        {!collapsed ? (
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold px-2">
             Arbitrage Intelligence Monitor
           </p>
@@ -68,7 +76,7 @@ export function DashboardSidebar() {
         onClick={toggleSidebar}
         className="absolute -right-4 top-20 h-8 w-8 rounded-full border bg-card shadow-sm z-50 hover:bg-accent"
       >
-        {isSidebarCollapsed ? (
+        {collapsed ? (
           <ChevronRight className="h-4 w-4" />
         ) : (
           <ChevronLeft className="h-4 w-4" />

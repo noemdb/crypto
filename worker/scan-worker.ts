@@ -47,8 +47,8 @@ import { URL } from "node:url";
   };
 
   const state: WorkerState = {
-    lastMode: "idle",
-    onlineActive: false,
+    lastMode: "online",
+    onlineActive: true,
     currentExecution: false,
     intervalSeconds: initialInterval,
     lastRunAt: null,
@@ -288,6 +288,10 @@ import { URL } from "node:url";
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`[worker] Scan worker listening on http://0.0.0.0:${PORT}`);
     console.log(`[worker] Online interval: ${state.intervalSeconds}s`);
+    console.log(`[worker] Auto-starting online mode...`);
+    scheduleOnlineScan().catch((error) => {
+      console.error("[worker] Auto-start scheduleOnlineScan error:", error);
+    });
   });
 
   process.on("SIGINT", async () => {

@@ -13,6 +13,7 @@ import {
 } from 'recharts'
 import { ChartContainer } from '@/components/ui/chart'
 import { TimeRangeSelector } from './time-range-selector'
+import { PriceHistoryDialog } from './price-history-dialog'
 import { getPriceChartData } from '@/lib/actions/monitor.actions'
 import type { PriceChartData } from '@/lib/actions/monitor.actions'
 import type { TimeRangeKey } from '@/lib/price-monitor/constants'
@@ -54,7 +55,7 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
   const [data, setData] = useState<PriceChartData | null>(initialData)
   const [rangeKey, setRangeKey] = useState<TimeRangeKey>('24h')
   const [isPending, startTransition] = useTransition()
-  const { tz, formatTimeShort } = useTimezone()
+  const { tz, formatTimeShort, formatDateTime } = useTimezone()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -89,13 +90,19 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
   const points = data?.points ?? []
   const extremes = data?.extremes
 
-  const chartData = points.map(p => ({
-    time: mounted ? formatAxisTime(p.time, rangeKey, tz) : '',
-    timeRaw: p.time,
-    priceMin: p.priceMin,
-    priceMax: p.priceMax,
-    priceMid: p.priceMid,
-  }))
+  // Ordenar cronológicamente (asc) antes de renderizar para garantizar
+  // que Recharts dibuje la línea de izquierda a derecha en el tiempo.
+  const chartData = [...points]
+    .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
+    .map(p => ({
+      // Usamos el timestamp numérico como clave del eje X para que Recharts
+      // respete el orden temporal en lugar de tratar los labels como categorías.
+      timeMs: new Date(p.time).getTime(),
+      timeRaw: p.time,
+      priceMin: p.priceMin,
+      priceMax: p.priceMax,
+      priceMid: p.priceMid,
+    }))
 
   return (
     <div className="space-y-4 w-full min-w-0 overflow-hidden">
@@ -111,6 +118,11 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
                 ? formatPrice(extremes.absoluteMin, currency)
                 : '—'}
             </p>
+            {extremes.absoluteMinTime && (
+              <p className="text-[9px] min-[400px]:text-[10px] text-muted-foreground mt-0.5 truncate">
+                {mounted ? formatDateTime(extremes.absoluteMinTime) : ''}
+              </p>
+            )}
           </div>
           <div className="rounded-lg border bg-muted/30 p-1.5 min-[400px]:p-2 sm:p-3 min-w-0 overflow-hidden">
             <p className="text-[8px] min-[400px]:text-[10px] text-muted-foreground uppercase tracking-wide truncate">
@@ -131,16 +143,24 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
                 ? formatPrice(extremes.absoluteMax, currency)
                 : '—'}
             </p>
+            {extremes.absoluteMaxTime && (
+              <p className="text-[9px] min-[400px]:text-[10px] text-muted-foreground mt-0.5 truncate">
+                {mounted ? formatDateTime(extremes.absoluteMaxTime) : ''}
+              </p>
+            )}
           </div>
         </div>
       )}
 
-      {/* Selector de rango */}
-      <div className="flex items-center justify-between">
-        <TimeRangeSelector value={rangeKey} onChange={handleRangeChange} />
-        {isPending && (
-          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-        )}
+      {/* Selector de rango y Botón de Histórico */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <TimeRangeSelector value={rangeKey} onChange={handleRangeChange} />
+          {isPending && (
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+          )}
+        </div>
+        <PriceHistoryDialog platform={platform} asset={asset} baseCurrency={currency} />
       </div>
 
       {/* Gráfico */}
@@ -164,11 +184,17 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
               </defs>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis
-                dataKey="time"
+                dataKey="timeMs"
+                scale="time"
+                type="number"
+                domain={['dataMin', 'dataMax']}
                 tick={{ fontSize: 10 }}
                 tickLine={false}
                 axisLine={false}
                 interval="preserveStartEnd"
+                tickFormatter={(ms) =>
+                  mounted ? formatAxisTime(new Date(ms as number).toISOString(), rangeKey, tz) : ''
+                }
               />
               <YAxis
                 tick={{ fontSize: 9 }}
@@ -179,7 +205,11 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
               />
               <Tooltip
                 formatter={(value: any) => [formatPrice(value as number, currency), '']}
-                labelFormatter={(label) => `Hora: ${label}`}
+                labelFormatter={(ms) =>
+                  mounted
+                    ? formatAxisTime(new Date(ms as number).toISOString(), rangeKey, tz)
+                    : ''
+                }
                 contentStyle={{
                   backgroundColor: 'hsl(var(--card))',
                   border: '1px solid hsl(var(--border))',
