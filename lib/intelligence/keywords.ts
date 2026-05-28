@@ -12,9 +12,12 @@ export const BANKING_KEYWORDS = {
   MEDIUM_SIGNAL: [
     'menudeo',
     'venta de divisas',
+    'comprar divisas',
+    'vender divisas',
     'jornada cambiaria',
     'operaciones cambiarias',
     'mesa de cambio',
+    'mercado de divisas',
     'divisas disponibles',
   ],
   INFORMATIONAL: [

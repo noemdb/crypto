@@ -27,6 +27,12 @@ const BANKING_SOURCES = [
     layer: 'banking',
     weight: 0.80,
   },
+  {
+    bank: 'mercantil',
+    url: 'https://www.mercantilbanco.com/personas',
+    layer: 'banking',
+    weight: 0.82,
+  },
 ] as const
 
 // Banco de Venezuela expone sus tasas via JSON público
