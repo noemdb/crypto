@@ -65,7 +65,16 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
 
   useEffect(() => {
     setMounted(true)
+    const savedType = sessionStorage.getItem('monitor-chart-type')
+    if (savedType === 'global' || savedType === 'detail') {
+      setChartType(savedType)
+    }
   }, [])
+
+  function handleChartTypeChange(type: 'global' | 'detail') {
+    setChartType(type)
+    sessionStorage.setItem('monitor-chart-type', type)
+  }
 
   // Sincronizar datos reactivamente cuando cambia la plataforma, el activo, el rango de tiempo o la última ejecución del worker
   useEffect(() => {
@@ -169,7 +178,7 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
               size="sm"
               variant={chartType === 'detail' ? 'default' : 'outline'}
               className={cn('h-7 px-2.5 text-xs', chartType === 'detail' && 'shadow-sm')}
-              onClick={() => setChartType('detail')}
+              onClick={() => handleChartTypeChange('detail')}
               title="Adaptado para diferencias pequeñas (Zoom en el spread)"
             >
               Detalle
@@ -178,7 +187,7 @@ export function PriceChart({ initialData, platform, asset, lastRunAt }: Props) {
               size="sm"
               variant={chartType === 'global' ? 'default' : 'outline'}
               className={cn('h-7 px-2.5 text-xs', chartType === 'global' && 'shadow-sm')}
-              onClick={() => setChartType('global')}
+              onClick={() => handleChartTypeChange('global')}
               title="Adaptado para diferencias grandes (Eje desde 0)"
             >
               Global
