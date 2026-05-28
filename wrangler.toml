@@ -16,3 +16,7 @@ binding = "ASSETS"
 [[services]]
 binding = "WORKER_SELF_REFERENCE"
 service = "crypto"
+
+# Run OpenNext build step before deploying
+[build]
+command = "npx --yes @opennextjs/cloudflare build"
