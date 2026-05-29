@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client/edge'
 import { PrismaNeonHttp } from '@prisma/adapter-neon'
-import { withAccelerate } from '@prisma/extension-accelerate'
 
 const globalForPrisma = globalThis as unknown as {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,7 +17,7 @@ function createPrismaClient() {
   return new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-  }).$extends(withAccelerate())
+  })
 }
 
 // Lazy getter — evaluated on first access, not at module parse time
