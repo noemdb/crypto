@@ -1,6 +1,9 @@
-import { PrismaClient } from '@prisma/client/edge'
+import { PrismaClient } from '@prisma/client'
 import { PrismaNeonHttp } from '@prisma/adapter-neon'
+import { withAccelerate } from '@prisma/extension-accelerate'
 
+// Use the standard Node Prisma client in server/worker runtimes.
+// `@prisma/client/edge` is designed for edge environments and pulls the WASM engine.
 const globalForPrisma = globalThis as unknown as {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   prisma: any
@@ -17,7 +20,7 @@ function createPrismaClient() {
   return new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-  })
+  }).$extends(withAccelerate())
 }
 
 // Lazy getter — evaluated on first access, not at module parse time
