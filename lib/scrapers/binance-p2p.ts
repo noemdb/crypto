@@ -26,7 +26,7 @@ type BinanceP2PResponse = {
 
 import type { Platform } from "@/lib/schemas";
 
-async function scrapeBinanceP2P(asset: Asset, fiat: string, platform: Platform): Promise<ScraperResult> {
+async function scrapeBinanceP2P(asset: Asset, fiat: string, platform: Platform, payType?: string): Promise<ScraperResult> {
   // 1. Fetch SELL ads (to get the Ask price - price we pay to buy)
   const sellAdsRes = await proxyRequest<BinanceP2PResponse>({
     url: BINANCE_P2P_API,
@@ -36,12 +36,12 @@ async function scrapeBinanceP2P(asset: Asset, fiat: string, platform: Platform):
       fiat,
       merchantCheck: false,
       page: 1,
-      payTypes: [],
+      payTypes: payType ? [payType] : [],
       publisherType: null,
       rows: 5,
       tradeType: "SELL",
     },
-    context: `${platform}_buy_${asset}`,
+    context: `${platform}_buy_${asset}${payType ? `_${payType}` : ''}`,
   });
 
   // 2. Fetch BUY ads (to get the Bid price - price we get when selling)
@@ -53,12 +53,12 @@ async function scrapeBinanceP2P(asset: Asset, fiat: string, platform: Platform):
       fiat,
       merchantCheck: false,
       page: 1,
-      payTypes: [],
+      payTypes: payType ? [payType] : [],
       publisherType: null,
       rows: 5,
       tradeType: "BUY",
     },
-    context: `${platform}_sell_${asset}`,
+    context: `${platform}_sell_${asset}${payType ? `_${payType}` : ''}`,
   });
 
   if (!sellAdsRes.ok) throw new Error(`Binance P2P ${fiat} (SELL) failed: ${sellAdsRes.error}`);
@@ -68,7 +68,7 @@ async function scrapeBinanceP2P(asset: Asset, fiat: string, platform: Platform):
   const buyAds = buyAdsRes.data.data || [];
 
   if (sellAds.length === 0 || buyAds.length === 0) {
-    throw new Error(`No P2P ads found for ${asset}/${fiat} on Binance`);
+    throw new Error(`No P2P ads found for ${asset}/${fiat} on Binance${payType ? ` (${payType})` : ''}`);
   }
 
   const sanitizeNum = (s: string) => parseFloat(s.replace(/[^0-9.-]/g, ""));
@@ -92,6 +92,7 @@ async function scrapeBinanceP2P(asset: Asset, fiat: string, platform: Platform):
     latencyMs: (sellAdsRes.latencyMs + buyAdsRes.latencyMs) / 2,
     scrapedAt: new Date().toISOString(),
     metadata: {
+      paymentMethod: payType ?? null,
       topBuyAds: buyAds.map(a => ({ nick: a.advertiser.nickName, price: a.adv.price })),
       topSellAds: sellAds.map(a => ({ nick: a.advertiser.nickName, price: a.adv.price })),
     },
@@ -107,3 +108,12 @@ export const binanceP2PVESScraper: Scraper = {
     return scrapeBinanceP2P(asset, "VES", "binance_p2p_ves");
   }
 };
+
+// Scraper por método de pago específico (para el monitor histórico)
+export async function scrapeBinanceP2PByPaymentMethod(
+  asset: Asset,
+  payType: string,
+): Promise<ScraperResult> {
+  return scrapeBinanceP2P(asset, "VES", "binance_p2p_ves", payType);
+}
+

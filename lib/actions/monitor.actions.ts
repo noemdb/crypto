@@ -4,6 +4,7 @@ import { getAuthenticatedUserId } from '@/lib/auth-helpers'
 import { getPriceHistory, getPriceExtremes } from '@/lib/db/queries/price-records'
 import { getOrCreateDefaultUserConfig } from '@/lib/db/queries/user-config'
 import { prisma } from '@/lib/db/prisma'
+import { POPULAR_PAYMENT_METHODS } from '@/lib/price-monitor/price-monitor-service'
 
 import type { TimeRangeKey } from '@/lib/price-monitor/constants'
 import { TIME_RANGES } from '@/lib/price-monitor/constants'
@@ -12,7 +13,7 @@ import { TIME_RANGES } from '@/lib/price-monitor/constants'
 
 export type PriceChartData = {
   points: Array<{
-    time: string       // ISO string para el eje X
+    time: string
     priceMin: number
     priceMax: number
     priceMid: number
@@ -44,11 +45,10 @@ export async function getPriceChartData(
   const since = new Date(Date.now() - hours * 60 * 60 * 1000)
 
   const [history, extremes] = await Promise.all([
-    getPriceHistory({ platform, asset, since }),
-    getPriceExtremes({ platform, asset, since }),
+    getPriceHistory({ platform, asset, since, paymentMethod: null }),
+    getPriceExtremes({ platform, asset, since, paymentMethod: null }),
   ])
 
-  // Detectar baseCurrency del registro más reciente disponible
   const baseCurrencyRecord = await prisma.priceRecord.findFirst({
     where: { platform, asset },
     orderBy: { recordedAt: 'desc' },
@@ -77,6 +77,87 @@ export async function getPriceChartData(
   }
 }
 
+// ── getPaymentMethodChartData ─────────────────────────────────────────────────
+
+export type PaymentMethodSeries = {
+  id: string
+  label: string
+  points: Array<{ time: string; priceMid: number; priceMin: number; priceMax: number }>
+}
+
+export async function getPaymentMethodChartData(
+  platform: string,
+  asset: string,
+  rangeKey: TimeRangeKey,
+  _cacheBuster?: string | null,
+): Promise<PaymentMethodSeries[]> {
+  const userId = await getAuthenticatedUserId()
+  if (!userId) return []
+  if (platform !== 'binance_p2p_ves') return []
+
+  const hours = TIME_RANGES[rangeKey].hours
+  const since = new Date(Date.now() - hours * 60 * 60 * 1000)
+
+  const results = await Promise.all(
+    POPULAR_PAYMENT_METHODS.map(async (pm) => {
+      const history = await getPriceHistory({ platform, asset, since, paymentMethod: pm.id })
+      return {
+        id: pm.id,
+        label: pm.label,
+        points: history.map(r => ({
+          time: r.recordedAt.toISOString(),
+          priceMid: r.priceMid,
+          priceMin: r.priceMin,
+          priceMax: r.priceMax,
+        })),
+      }
+    })
+  )
+
+  return results.filter(s => s.points.length > 0)
+}
+
+// ── getPaymentMethodSummary ───────────────────────────────────────────────────
+
+export type PaymentMethodSummary = {
+  paymentMethodId: string
+  paymentMethodLabel: string
+  asset: string
+  baseCurrency: string
+  currentMin: number | null
+  currentMax: number | null
+  lastRecordedAt: string | null
+}
+
+export async function getPaymentMethodSummary(
+  platform: string,
+  asset: string,
+): Promise<PaymentMethodSummary[]> {
+  const userId = await getAuthenticatedUserId()
+  if (!userId) return []
+  if (platform !== 'binance_p2p_ves') return []
+
+  const results = await Promise.all(
+    POPULAR_PAYMENT_METHODS.map(async (pm) => {
+      const latest = await prisma.priceRecord.findFirst({
+        where: { platform, asset, paymentMethod: pm.id },
+        orderBy: { recordedAt: 'desc' },
+      })
+      return {
+        paymentMethodId: pm.id,
+        paymentMethodLabel: pm.label,
+        asset,
+        baseCurrency: latest?.baseCurrency ?? 'VES',
+        currentMin: latest?.priceMin ?? null,
+        currentMax: latest?.priceMax ?? null,
+        lastRecordedAt: latest?.recordedAt.toISOString() ?? null,
+      }
+    })
+  )
+
+  return results
+}
+
 // ── getMonitorSummary ─────────────────────────────────────────────────────────
 
 export type MonitorSummary = {
@@ -102,13 +183,14 @@ export async function getMonitorSummary(): Promise<MonitorSummary[]> {
     for (const asset of assets) {
       const [latest, prev24h] = await Promise.all([
         prisma.priceRecord.findFirst({
-          where: { platform, asset },
+          where: { platform, asset, paymentMethod: null },
           orderBy: { recordedAt: 'desc' },
         }),
         prisma.priceRecord.findFirst({
           where: {
             platform,
             asset,
+            paymentMethod: null,
             recordedAt: { lte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
           },
           orderBy: { recordedAt: 'desc' },
@@ -193,7 +275,7 @@ export async function getPaginatedPriceHistory(
   const userId = await getAuthenticatedUserId()
   if (!userId) return null
 
-  const where: any = { platform, asset }
+  const where: any = { platform, asset, paymentMethod: null }
 
   if (rangeKey !== 'all') {
     const hours = TIME_RANGES[rangeKey].hours

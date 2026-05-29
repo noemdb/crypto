@@ -3,9 +3,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { PlatformSelector } from './platform-selector'
 import { PriceStatsCard } from './price-stats-card'
+import { PaymentMethodStatsCard } from './payment-method-stats-card'
 import { PriceChart } from './price-chart'
-import type { MonitorSummary, PriceChartData } from '@/lib/actions/monitor.actions'
-import { getMonitorSummary } from '@/lib/actions/monitor.actions'
+import type {
+  MonitorSummary,
+  PriceChartData,
+  PaymentMethodSummary,
+} from '@/lib/actions/monitor.actions'
+import {
+  getMonitorSummary,
+  getPaymentMethodSummary,
+} from '@/lib/actions/monitor.actions'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 const explicitWorkerBase = process.env.NEXT_PUBLIC_SCAN_WORKER_URL?.replace(/\/$/, "");
@@ -35,67 +43,108 @@ export function MonitorPanel({
   const [lastRunAt, setLastRunAt] = useState<string | null>(null)
   const lastRunAtRef = useRef<string | null>(null)
 
-  // Sincronizar stats iniciales si cambian desde el componente de servidor
+  // Estado de métodos de pago activos — compartido entre gráfico y tarjetas
+  // Persistido en sessionStorage para mantenerlo entre navegaciones
+  const [activePMs, setActivePMs] = useState<Set<string>>(new Set())
+  const [pmSummary, setPmSummary] = useState<PaymentMethodSummary[]>([])
+  const [pmSummaryLoading, setPmSummaryLoading] = useState(false)
+  const [sessionLoaded, setSessionLoaded] = useState(false)
+
+  const isP2P = platform === 'binance_p2p_ves'
+
   useEffect(() => {
     setSummaryData(summary)
   }, [summary])
 
+  // Restaurar activePMs desde sessionStorage al montar
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('monitor-active-pms')
+      if (stored) {
+        const parsed: string[] = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setActivePMs(new Set(parsed))
+        }
+      }
+    } catch { /* ignorar errores de parse */ }
+    setSessionLoaded(true)
+  }, [])
+
+  // Persistir activePMs en sessionStorage cada vez que cambia
+  useEffect(() => {
+    if (!sessionLoaded) return  // no sobrescribir antes de leer
+    sessionStorage.setItem('monitor-active-pms', JSON.stringify([...activePMs]))
+  }, [activePMs, sessionLoaded])
+
+  // Cargar resumen de métodos de pago cuando cambia plataforma o asset
+  useEffect(() => {
+    if (!isP2P) {
+      setPmSummary([])
+      setActivePMs(new Set())
+      return
+    }
+    setPmSummaryLoading(true)
+    getPaymentMethodSummary(platform, initialAsset)
+      .then(setPmSummary)
+      .catch(console.error)
+      .finally(() => setPmSummaryLoading(false))
+  }, [platform, initialAsset, isP2P])
+
+  // Recargar resumen PM cuando el worker finaliza un ciclo
+  useEffect(() => {
+    if (!isP2P || activePMs.size === 0) return
+    getPaymentMethodSummary(platform, initialAsset)
+      .then(setPmSummary)
+      .catch(console.error)
+  }, [lastRunAt, platform, initialAsset, isP2P, activePMs.size])
+
+  function togglePM(id: string) {
+    setActivePMs(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   const fetchWorkerStatus = useCallback(async () => {
     for (const base of defaultWorkerBases) {
       try {
-        const response = await fetch(`${base}/scan/status`, {
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          throw new Error("Worker unavailable");
-        }
-
+        const response = await fetch(`${base}/scan/status`, { cache: "no-store" });
+        if (!response.ok) throw new Error("Worker unavailable");
         const json = await response.json();
-        if (json && typeof json.lastRunAt === 'string') {
-          setLastRunAt(json.lastRunAt)
-        }
+        if (json && typeof json.lastRunAt === 'string') setLastRunAt(json.lastRunAt)
         return;
-      } catch {
-        // Intentar con el siguiente base URL
-      }
+      } catch { /* intentar siguiente */ }
     }
   }, [])
 
-  // Sondeo periódico del estado del worker cada 5 segundos
   useEffect(() => {
     fetchWorkerStatus()
     const interval = setInterval(fetchWorkerStatus, 5000)
     return () => clearInterval(interval)
   }, [fetchWorkerStatus])
 
-  // Reactivar actualización de estadísticas cuando el worker finalice un ciclo
   useEffect(() => {
     if (lastRunAt && lastRunAt !== lastRunAtRef.current) {
       if (lastRunAtRef.current !== null) {
         getMonitorSummary()
-          .then((newSummary) => {
-            if (newSummary) {
-              setSummaryData(newSummary)
-            }
-          })
-          .catch((err) => {
-            console.error("[monitor-panel] Error al actualizar estadísticas:", err)
-          })
+          .then(newSummary => { if (newSummary) setSummaryData(newSummary) })
+          .catch(err => console.error("[monitor-panel]", err))
       }
       lastRunAtRef.current = lastRunAt
     }
   }, [lastRunAt])
 
-  // Obtener plataformas únicas del resumen
   const availablePlatforms = Array.from(new Set(summaryData.map(s => s.platform)))
-
-  // Filtrar summary por la plataforma seleccionada
   const activeStats = summaryData.filter(s => s.platform === platform)
+
+  // Solo los PMs activos que tienen datos en el resumen
+  const activePMSummaries = pmSummary.filter(pm => activePMs.has(pm.paymentMethodId))
 
   return (
     <div className="space-y-6">
-      {/* 1. Selector de Plataforma Principal */}
+      {/* 1. Selector de Plataforma */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-medium">Plataforma</h2>
         <PlatformSelector
@@ -105,7 +154,7 @@ export function MonitorPanel({
         />
       </div>
 
-      {/* 2. Tarjetas de Resumen (Mínimo / Máximo) */}
+      {/* 2. Tarjetas de Resumen — General */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 min-w-0">
         {activeStats.map((stat) => (
           <PriceStatsCard key={stat.asset} summary={stat} />
@@ -116,6 +165,24 @@ export function MonitorPanel({
           </div>
         )}
       </div>
+
+      {/* 2b. Tarjetas de Resumen — Por Método de Pago (cuando hay PMs activos) */}
+      {activePMSummaries.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide">
+            Precio actual por método de pago
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 min-w-0">
+            {activePMSummaries.map(pm => (
+              <PaymentMethodStatsCard
+                key={pm.paymentMethodId}
+                summary={pm}
+                onClose={() => togglePM(pm.paymentMethodId)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 3. Gráfico Histórico */}
       <Card className="min-w-0 overflow-hidden">
@@ -133,6 +200,8 @@ export function MonitorPanel({
             platform={platform}
             asset={initialAsset}
             lastRunAt={lastRunAt}
+            activePMs={activePMs}
+            onTogglePM={togglePM}
           />
         </CardContent>
       </Card>

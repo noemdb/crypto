@@ -5,6 +5,7 @@ export async function insertPriceRecord(data: {
   platform: string
   asset: string
   baseCurrency: string
+  paymentMethod?: string | null
   priceMin: number
   priceMax: number
   priceMid: number
@@ -17,10 +18,18 @@ export async function insertPriceRecord(data: {
   })
 }
 
-// Obtener el último registro de una plataforma/asset
-export async function getLastPriceRecord(platform: string, asset: string) {
+// Obtener el último registro de una plataforma/asset (opcionalmente por método de pago)
+export async function getLastPriceRecord(
+  platform: string,
+  asset: string,
+  paymentMethod?: string | null,
+) {
   return prisma.priceRecord.findFirst({
-    where: { platform, asset },
+    where: {
+      platform,
+      asset,
+      paymentMethod: paymentMethod !== undefined ? paymentMethod : null,
+    },
     orderBy: { recordedAt: 'desc' },
   })
 }
@@ -31,11 +40,13 @@ export async function getPriceHistory(opts: {
   asset: string
   since: Date
   until?: Date
+  paymentMethod?: string | null
 }) {
   return prisma.priceRecord.findMany({
     where: {
       platform: opts.platform,
       asset: opts.asset,
+      paymentMethod: opts.paymentMethod !== undefined ? opts.paymentMethod : null,
       recordedAt: {
         gte: opts.since,
         ...(opts.until ? { lte: opts.until } : {}),
@@ -56,10 +67,12 @@ export async function getPriceExtremes(opts: {
   platform: string
   asset: string
   since: Date
+  paymentMethod?: string | null
 }) {
   const where = {
     platform: opts.platform,
     asset: opts.asset,
+    paymentMethod: opts.paymentMethod !== undefined ? opts.paymentMethod : null,
     recordedAt: { gte: opts.since },
   }
 
@@ -99,3 +112,4 @@ export async function pruneOldPriceRecords() {
   })
   return result.count
 }
+

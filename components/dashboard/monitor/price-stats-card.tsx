@@ -52,7 +52,9 @@ export function PriceStatsCard({ summary }: { summary: MonitorSummary }) {
     setMounted(true)
   }, [])
 
-  const age = summary.lastRecordedAt
+  // Guardado detrás de `mounted` para evitar hydration mismatch:
+  // Date.now() cambia entre el renderizado SSR y la hidratación en el cliente.
+  const age = mounted && summary.lastRecordedAt
     ? Math.round((Date.now() - new Date(summary.lastRecordedAt).getTime()) / 60_000)
     : null
 
@@ -96,7 +98,7 @@ export function PriceStatsCard({ summary }: { summary: MonitorSummary }) {
           </div>
         </div>
 
-        {/* Age */}
+        {/* Age — solo en cliente para evitar hydration mismatch */}
         {age !== null && (
           <p className="text-[9px] sm:text-[10px] text-muted-foreground text-right">
             Hace {age < 60 ? `${age}min` : `${Math.round(age / 60)}h`}
