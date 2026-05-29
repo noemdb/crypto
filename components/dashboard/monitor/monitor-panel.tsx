@@ -9,10 +9,12 @@ import type {
   MonitorSummary,
   PriceChartData,
   PaymentMethodSummary,
+  PaymentMethodSeries,
 } from '@/lib/actions/monitor.actions'
 import {
   getMonitorSummary,
   getPaymentMethodSummary,
+  getPaymentMethodChartData,
 } from '@/lib/actions/monitor.actions'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -24,6 +26,20 @@ const defaultWorkerBases = [
   "http://127.0.0.1:3333",
   "http://localhost:3333",
 ].filter((url): url is string => Boolean(url));
+
+function formatMonitorPrice(price: number | null, currency: string) {
+  if (price === null || Number.isNaN(price) || !Number.isFinite(price)) return '—'
+  const options: Intl.NumberFormatOptions = {
+    minimumFractionDigits: currency === 'VES' ? 2 : 4,
+    maximumFractionDigits: currency === 'VES' ? 2 : 4,
+  }
+
+  if (currency === 'USD') {
+    return new Intl.NumberFormat('es-VE', { style: 'currency', currency, ...options }).format(price)
+  }
+
+  return new Intl.NumberFormat('es-VE', options).format(price)
+}
 
 type Props = {
   summary: MonitorSummary[]
@@ -48,6 +64,8 @@ export function MonitorPanel({
   const [activePMs, setActivePMs] = useState<Set<string>>(new Set())
   const [pmSummary, setPmSummary] = useState<PaymentMethodSummary[]>([])
   const [pmSummaryLoading, setPmSummaryLoading] = useState(false)
+  const [pmSeries, setPmSeries] = useState<PaymentMethodSeries[]>([])
+  const [pmSeriesLoading, setPmSeriesLoading] = useState(false)
   const [sessionLoaded, setSessionLoaded] = useState(false)
 
   const isP2P = platform === 'binance_p2p_ves'
@@ -98,6 +116,29 @@ export function MonitorPanel({
       .catch(console.error)
   }, [lastRunAt, platform, initialAsset, isP2P, activePMs.size])
 
+  useEffect(() => {
+    if (!isP2P || activePMs.size === 0) {
+      setPmSeries([])
+      return
+    }
+
+    let active = true
+    setPmSeriesLoading(true)
+
+    getPaymentMethodChartData(platform, initialAsset, '24h', lastRunAt)
+      .then(series => {
+        if (active) setPmSeries(series)
+      })
+      .catch(console.error)
+      .finally(() => {
+        if (active) setPmSeriesLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [platform, initialAsset, lastRunAt, activePMs.size, isP2P])
+
   function togglePM(id: string) {
     setActivePMs(prev => {
       const next = new Set(prev)
@@ -139,6 +180,22 @@ export function MonitorPanel({
   const availablePlatforms = Array.from(new Set(summaryData.map(s => s.platform)))
   const activeStats = summaryData.filter(s => s.platform === platform)
 
+  const platformStats = activeStats.length > 0 ? {
+    currentMin: activeStats.reduce<number>((acc, stat) => stat.currentMin !== null ? Math.min(acc, stat.currentMin) : acc, Number.POSITIVE_INFINITY),
+    currentMax: activeStats.reduce<number>((acc, stat) => stat.currentMax !== null ? Math.max(acc, stat.currentMax) : acc, Number.NEGATIVE_INFINITY),
+    avgChange24hPct: (() => {
+      const changes = activeStats
+        .map((stat) => stat.change24hPct)
+        .filter((value): value is number => value !== null)
+      return changes.length > 0
+        ? changes.reduce((sum, value) => sum + value, 0) / changes.length
+        : null
+    })(),
+    baseCurrency: activeStats[0]?.baseCurrency ?? 'USD',
+  } : null
+
+  const activePmSeriesById = Object.fromEntries(pmSeries.map(series => [series.id, series]))
+
   // Solo los PMs activos que tienen datos en el resumen
   const activePMSummaries = pmSummary.filter(pm => activePMs.has(pm.paymentMethodId))
 
@@ -147,11 +204,37 @@ export function MonitorPanel({
       {/* 1. Selector de Plataforma */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-medium">Plataforma</h2>
-        <PlatformSelector
-          platforms={availablePlatforms}
-          selected={platform}
-          onSelect={setPlatform}
-        />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <PlatformSelector
+            platforms={availablePlatforms}
+            selected={platform}
+            onSelect={setPlatform}
+          />
+          {platformStats && (
+            <div className="rounded-2xl border border-muted/30 bg-muted/50 px-3 py-2 text-xs text-muted-foreground grid grid-cols-3 gap-3 min-w-[240px]">
+              <div className="space-y-0.5">
+                <p className="uppercase tracking-wide text-[10px]">Mín</p>
+                <p className="font-semibold text-foreground">
+                  {formatMonitorPrice(platformStats.currentMin, platformStats.baseCurrency)}
+                </p>
+              </div>
+              <div className="space-y-0.5">
+                <p className="uppercase tracking-wide text-[10px]">Máx</p>
+                <p className="font-semibold text-foreground">
+                  {formatMonitorPrice(platformStats.currentMax, platformStats.baseCurrency)}
+                </p>
+              </div>
+              <div className="space-y-0.5">
+                <p className="uppercase tracking-wide text-[10px]">Δ 24h</p>
+                <p className={`font-semibold ${platformStats.avgChange24hPct === null ? 'text-muted-foreground' : platformStats.avgChange24hPct >= 0 ? 'text-green-500' : 'text-red-400'}`}>
+                  {platformStats.avgChange24hPct === null
+                    ? '—'
+                    : `${platformStats.avgChange24hPct >= 0 ? '+' : ''}${platformStats.avgChange24hPct.toFixed(2)}%`}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 2. Tarjetas de Resumen — General */}
@@ -177,6 +260,7 @@ export function MonitorPanel({
               <PaymentMethodStatsCard
                 key={pm.paymentMethodId}
                 summary={pm}
+                series={activePmSeriesById[pm.paymentMethodId]}
                 onClose={() => togglePM(pm.paymentMethodId)}
               />
             ))}

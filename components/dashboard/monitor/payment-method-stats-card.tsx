@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { useTimezone } from '@/lib/hooks/use-timezone'
 import { X } from 'lucide-react'
-import type { PaymentMethodSummary } from '@/lib/actions/monitor.actions'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+import type { PaymentMethodSummary, PaymentMethodSeries } from '@/lib/actions/monitor.actions'
 
 const PM_COLORS: Record<string, string> = {
   PagoMovil:        '#3B82F6',
@@ -27,10 +28,11 @@ function formatPrice(price: number | null, currency: string): string {
 
 type Props = {
   summary: PaymentMethodSummary
+  series: PaymentMethodSeries | undefined
   onClose: () => void
 }
 
-export function PaymentMethodStatsCard({ summary, onClose }: Props) {
+export function PaymentMethodStatsCard({ summary, series, onClose }: Props) {
   const [mounted, setMounted] = useState(false)
   const { formatDateTime } = useTimezone()
 
@@ -89,6 +91,67 @@ export function PaymentMethodStatsCard({ summary, onClose }: Props) {
                 </p>
               </div>
             </div>
+
+            {series && series.points.length > 0 && (
+              <div className="h-24 mt-2 -mx-2 sm:-mx-3">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={series.points.map(point => ({
+                      time: new Date(point.time).getTime(),
+                      priceMid: point.priceMid,
+                    }))}
+                    margin={{ top: 4, right: 4, left: 4, bottom: 22 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted/40" />
+                    <XAxis
+                      dataKey="time"
+                      type="number"
+                      scale="time"
+                      tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }}
+                      tickLine={false}
+                      axisLine={true}
+                      tickFormatter={(value) => {
+                        const date = new Date(value as number)
+                        return date.toLocaleTimeString('es-VE', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          timeZone: 'America/Caracas',
+                        })
+                      }}
+                      label={{ value: 'Hora', position: 'insideBottomRight', offset: -4, style: { fontSize: 9, fill: 'var(--muted-foreground)' } }}
+                      minTickGap={18}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }}
+                      tickLine={false}
+                      axisLine={true}
+                      width={32}
+                      label={{ value: 'Precio', angle: -90, position: 'insideLeft', offset: -12, style: { fontSize: 9, fill: 'var(--muted-foreground)' } }}
+                    />
+                    <Tooltip
+                      formatter={(value: any) => [formatPrice(value as number, summary.baseCurrency), 'Precio']}
+                      labelFormatter={(value) => {
+                        const date = new Date(value as number)
+                        return date.toLocaleTimeString('es-VE', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          timeZone: 'America/Caracas',
+                        })
+                      }}
+                      wrapperStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))' }}
+                    />
+                    <Line
+                      dataKey="priceMid"
+                      stroke={color}
+                      strokeWidth={2}
+                      dot={false}
+                      connectNulls
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
 
             {/* Timestamp / Age */}
             {summary.lastRecordedAt && (
