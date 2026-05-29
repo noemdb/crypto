@@ -169,6 +169,7 @@ export function PriceChart({ initialData, platform, asset, lastRunAt, activePMs,
     })
 
   // También agregar puntos de PM que no coincidan con puntos generales
+  // No inyectamos 0 en la serie general, para evitar dips falsos en el gráfico.
   const pmOnlyPoints: typeof generalPoints = []
   for (const series of pmSeries) {
     for (const pt of series.points) {
@@ -181,10 +182,6 @@ export function PriceChart({ initialData, platform, asset, lastRunAt, activePMs,
         pmOnlyPoints.push({
           timeMs,
           timeRaw: pt.time,
-          priceMid: 0,
-          priceMin: 0,
-          priceMax: 0,
-          priceRange: [0, 0],
           [`pm_${series.id}`]: pt.priceMid,
         } as any)
       }
