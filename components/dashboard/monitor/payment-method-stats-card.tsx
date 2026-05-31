@@ -93,7 +93,7 @@ export function PaymentMethodStatsCard({ summary, series, onClose }: Props) {
             </div>
 
             {series && series.points.length > 0 && (
-              <div className="h-24 mt-2 -mx-2 sm:-mx-3">
+              <div className="h-28 mt-2 -mx-2 sm:-mx-3">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={series.points.map(point => ({
@@ -110,6 +110,7 @@ export function PaymentMethodStatsCard({ summary, series, onClose }: Props) {
                       tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }}
                       tickLine={false}
                       axisLine={true}
+                      domain={["dataMin", "dataMax"]}
                       tickFormatter={(value) => {
                         const date = new Date(value as number)
                         return date.toLocaleTimeString('es-VE', {
@@ -126,6 +127,7 @@ export function PaymentMethodStatsCard({ summary, series, onClose }: Props) {
                       tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }}
                       tickLine={false}
                       axisLine={true}
+                      domain={["dataMin", "dataMax"]}
                       width={32}
                       label={{ value: 'Precio', angle: -90, position: 'insideLeft', offset: -12, style: { fontSize: 9, fill: 'var(--muted-foreground)' } }}
                     />
@@ -145,7 +147,7 @@ export function PaymentMethodStatsCard({ summary, series, onClose }: Props) {
                       dataKey="priceMid"
                       stroke={color}
                       strokeWidth={2}
-                      dot={false}
+                      dot={{ r: 2 }}
                       connectNulls
                     />
                   </LineChart>
