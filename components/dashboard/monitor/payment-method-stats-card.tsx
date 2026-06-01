@@ -127,7 +127,10 @@ export function PaymentMethodStatsCard({ summary, series, onClose }: Props) {
                       tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }}
                       tickLine={false}
                       axisLine={true}
-                      domain={["dataMin", "dataMax"]}
+                      domain={([dataMin, dataMax]: readonly [number, number]) => {
+                        const pad = (dataMax - dataMin) * 0.05 || 1
+                        return [Math.max(0, dataMin - pad), dataMax + pad] as [number, number]
+                      }}
                       width={32}
                       label={{ value: 'Precio', angle: -90, position: 'insideLeft', offset: -12, style: { fontSize: 9, fill: 'var(--muted-foreground)' } }}
                     />

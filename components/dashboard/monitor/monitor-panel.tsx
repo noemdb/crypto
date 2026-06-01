@@ -255,14 +255,18 @@ export function MonitorPanel({
           <p className="text-xs text-muted-foreground uppercase tracking-wide">
             Precio actual por método de pago
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 min-w-0">
+          <div className="flex flex-wrap gap-2 sm:gap-3 min-w-0">
             {activePMSummaries.map(pm => (
-              <PaymentMethodStatsCard
+              <div 
                 key={pm.paymentMethodId}
-                summary={pm}
-                series={activePmSeriesById[pm.paymentMethodId]}
-                onClose={() => togglePM(pm.paymentMethodId)}
-              />
+                className="flex-auto min-w-[calc(33.33%-1rem)] max-w-[calc(50%-0.25rem)]"
+              >
+                <PaymentMethodStatsCard
+                  summary={pm}
+                  series={activePmSeriesById[pm.paymentMethodId]}
+                  onClose={() => togglePM(pm.paymentMethodId)}
+                />
+              </div>
             ))}
           </div>
         </div>
