@@ -1,5 +1,6 @@
 import { defineConfig } from "eslint/config";
+import nextPlugin from "@next/eslint-plugin-next";
 
-const eslintConfig = defineConfig([]);
-
-export default eslintConfig;
+export default defineConfig({
+  extends: [nextPlugin.flatConfig.coreWebVitals],
+});
