@@ -44,6 +44,8 @@
   "exclude": [
     "node_modules",
     "playwright-worker",
-    "test-db-ws.ts"
+    "test-*.ts",
+    "check-*.ts",
+    "fix-*.ts"
   ]
 }
