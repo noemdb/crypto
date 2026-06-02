@@ -131,7 +131,8 @@ export function PaymentMethodStatsCard({ summary, series, onClose }: Props) {
                         const pad = (dataMax - dataMin) * 0.05 || 1
                         return [Math.max(0, dataMin - pad), dataMax + pad] as [number, number]
                       }}
-                      width={32}
+                      width={40}
+                      tickFormatter={(value: number) => new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}
                       label={{ value: 'Precio', angle: -90, position: 'insideLeft', offset: -12, style: { fontSize: 9, fill: 'var(--muted-foreground)' } }}
                     />
                     <Tooltip
